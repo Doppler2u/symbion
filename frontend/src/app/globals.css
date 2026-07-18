@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'JetBrains Mono', 'Courier New', monospace;
+  --color-arc-green: #00ff41;
+  --color-arc-dark: #050505;
+  --color-arc-panel: #111111;
+  --color-arc-border: #333333;
+}
+
+body {
+  background-color: var(--color-arc-dark);
+  color: white;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar for terminal vibe */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-arc-dark); 
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-arc-border); 
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-arc-green); 
+}
+
+::selection {
+  background-color: var(--color-arc-green);
+  color: black;
+}
+
+/* Terminal Blink effect */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
