@@ -42,7 +42,7 @@ export default function BuyPage() {
         abi: SYMBION_ABI,
         functionName: 'campaigns',
         args: [BigInt(id as string)]
-      });
+      }) as any[];
 
       if (camp[5]) { // active
         setCampaign({

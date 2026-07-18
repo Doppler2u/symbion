@@ -102,7 +102,7 @@ export default function Home() {
 
       // Fetch Purchase Events
       const currentBlock = await publicClient.getBlockNumber();
-      const fromBlock = currentBlock > 9000n ? currentBlock - 9000n : 0n;
+      const fromBlock = currentBlock > BigInt(9000) ? currentBlock - BigInt(9000) : BigInt(0);
 
       const logs = await publicClient.getLogs({
         address: SYMBION_ADDRESS,
