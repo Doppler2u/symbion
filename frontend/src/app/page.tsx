@@ -111,14 +111,12 @@ export default function Home() {
         toBlock: 'latest'
       });
       
-      const feed = logs.map((log: any) => ({
+      const validLogs = logs.filter((log: any) => log.args.affiliate !== '0x0000000000000000000000000000000000000000');
+      
+      const feed = validLogs.map((log: any) => ({
         hash: log.transactionHash,
-        agent: log.args.affiliate === '0x0000000000000000000000000000000000000000' 
-               ? `0x${log.transactionHash.slice(6, 46)}` 
-               : log.args.affiliate,
-        amount: log.args.affiliate === '0x0000000000000000000000000000000000000000'
-               ? (parseInt(log.transactionHash.slice(-4), 16) % 25 + 1.5).toFixed(2)
-               : formatUnits(log.args.affiliateAmount, 18),
+        agent: log.args.affiliate,
+        amount: formatUnits(log.args.affiliateAmount, 18),
         status: 'SETTLED'
       })).reverse().slice(0, 5); // get last 5
       
