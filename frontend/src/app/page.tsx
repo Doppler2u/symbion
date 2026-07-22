@@ -393,7 +393,7 @@ export default function Home() {
                   <tr key={idx} className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200">
                     <td className="py-4 text-white">#{camp.id}</td>
                     <td className="py-4 text-arc-green">
-                      <Link href={`/buy/${camp.id}?ref=0x0000000000000000000000000000000000000000`} target="_blank" className="hover:text-white transition-colors underline decoration-arc-green/30 underline-offset-4">
+                      <Link href={`/buy/${camp.id}?ref=${walletAddress || '0x0000000000000000000000000000000000000000'}`} target="_blank" className="hover:text-white transition-colors underline decoration-arc-green/30 underline-offset-4">
                         {camp.name}
                       </Link>
                     </td>
@@ -405,9 +405,9 @@ export default function Home() {
                       </span>
                       <button 
                         onClick={() => {
-                          const link = `${window.location.origin}/buy/${camp.id}?ref=0x1111111111111111111111111111111111111111`;
+                          const link = `${window.location.origin}/buy/${camp.id}?ref=${walletAddress || '0x0000000000000000000000000000000000000000'}`;
                           navigator.clipboard.writeText(link);
-                          setNotification({ message: 'TEST_LINK_COPIED_TO_CLIPBOARD', type: 'info' });
+                          setNotification({ message: 'AFFILIATE_LINK_COPIED_TO_CLIPBOARD', type: 'info' });
                           setTimeout(() => setNotification(null), 3000);
                         }}
                         className="text-arc-border hover:text-white transition-colors p-1"
