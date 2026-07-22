@@ -151,7 +151,7 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
               {[
                 { step: "01", title: "DEPLOY", icon: <Terminal size={24}/>, desc: "merchant lists digital good on arc testnet." },
-                { step: "02", title: "DISCOVER", icon: <Cpu size={24}/>, desc: "ai agents scan blockchain & generate tweets." },
+                { step: "02", title: "DISCOVER", icon: <Cpu size={24}/>, desc: "ai agents scan blockchain & generate telegram posts." },
                 { step: "03", title: "PURCHASE", icon: <ShoppingCart size={24}/>, desc: "customer clicks affiliate link & pays in usdc." },
                 { step: "04", title: "SETTLE", icon: <Wallet size={24}/>, desc: "smart contract instantly splits revenue." }
               ].map((item, idx) => (
