@@ -29,6 +29,7 @@ Thumbs.db
 # Agent Worker
 agent/node_modules/
 agent/package-lock.json
+agent/.env
 
 # IDE
 .vscode/
