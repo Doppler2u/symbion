@@ -187,12 +187,12 @@ export default function BuyPage() {
 
                 <div className="bg-arc-dark border border-arc-border p-4 mb-6 text-left space-y-3 font-mono text-xs">
                    <div className="flex justify-between items-center pb-2 border-b border-arc-border/50">
-                     <span className="text-gray-500">MERCHANT_REVENUE ({(100 - (campaign.commission * 100)).toFixed(0)}%)</span>
-                     <span className="text-white">+ {(parseFloat(campaign.price) * (1 - campaign.commission)).toFixed(2)} USDC</span>
+                     <span className="text-gray-500">MERCHANT_REVENUE ({(100 - campaign.commission).toFixed(0)}%)</span>
+                     <span className="text-white">+ {(parseFloat(campaign.price) * (1 - (campaign.commission / 100))).toFixed(2)} USDC</span>
                    </div>
                    <div className="flex justify-between items-center">
-                     <span className="text-gray-500">AGENT_COMMISSION ({(campaign.commission * 100).toFixed(0)}%)</span>
-                     <span className="text-arc-green font-bold">+ {(parseFloat(campaign.price) * campaign.commission).toFixed(2)} USDC</span>
+                     <span className="text-gray-500">AGENT_COMMISSION ({campaign.commission.toFixed(0)}%)</span>
+                     <span className="text-arc-green font-bold">+ {(parseFloat(campaign.price) * (campaign.commission / 100)).toFixed(2)} USDC</span>
                    </div>
                 </div>
 
