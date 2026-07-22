@@ -383,12 +383,12 @@ export default function Home() {
               <tbody className="font-mono normal-case text-xs">
                 {(campaignFilter === 'MINE' && walletAddress 
                   ? campaignsList.filter(c => c.merchant.toLowerCase() === walletAddress.toLowerCase()) 
-                  : campaignsList
+                  : (walletAddress ? campaignsList.filter(c => c.merchant.toLowerCase() !== walletAddress.toLowerCase()) : campaignsList)
                 ).length === 0 ? (
                   <tr><td colSpan={5} className="py-4 text-gray-500 text-center">NO_CAMPAIGNS_FOUND</td></tr>
                 ) : (campaignFilter === 'MINE' && walletAddress 
                   ? campaignsList.filter(c => c.merchant.toLowerCase() === walletAddress.toLowerCase()) 
-                  : campaignsList
+                  : (walletAddress ? campaignsList.filter(c => c.merchant.toLowerCase() !== walletAddress.toLowerCase()) : campaignsList)
                 ).map((camp, idx) => (
                   <tr key={idx} className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200">
                     <td className="py-4 text-white">#{camp.id}</td>
