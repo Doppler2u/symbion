@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Terminal, Shield, Zap, Activity, ArrowRight, Network, Cpu, ShoppingCart, Wallet } from 'lucide-react';
 import Logo from '@/components/Logo';
@@ -8,6 +8,34 @@ interface LandingPageViewProps {
 }
 
 export default function LandingPageView({ connectWallet }: LandingPageViewProps) {
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      text: "BIG NEWS! 🚨 Get ready to level up with DEVI 🔥🔮 This revolutionary tool is taking the crypto world by storm! 💥 Limited time offer: 2 USDC 🔒 Don't miss out! 💸",
+      link: "symbion-phi.vercel.app/buy/1?ref=0x111..."
+    }
+  ]);
+
+  useEffect(() => {
+    const timer1 = setTimeout(() => {
+      setMessages(prev => [...prev, {
+        id: 2,
+        text: "NEW CAMPAIGN 🚀 Arc Token Sniper just listed! 💎 Fast AF. Price: 5 USDC. Commission: 15% 💸",
+        link: "symbion-phi.vercel.app/buy/2?ref=0x111..."
+      }]);
+    }, 3000);
+    
+    const timer2 = setTimeout(() => {
+      setMessages(prev => [...prev, {
+        id: 3,
+        text: "ALPHA DROP 💎 Premium Trading Signals are live! Earn a massive 50% commission for every sale! 🤯 LFG!",
+        link: "symbion-phi.vercel.app/buy/3?ref=0x111..."
+      }]);
+    }, 6000);
+
+    return () => { clearTimeout(timer1); clearTimeout(timer2); };
+  }, []);
+
   return (
     <div className="min-h-screen bg-arc-dark text-white font-sans uppercase tracking-widest overflow-hidden selection:bg-arc-green selection:text-black">
       
@@ -99,27 +127,30 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
                   </div>
                   
                   {/* Telegram Chat Area */}
-                  <div className="flex-1 p-4 flex flex-col justify-end pb-16 gap-4 relative bg-[#0F172A] z-0">
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 1 }}
-                      className="bg-[#1E293B] rounded-2xl rounded-bl-none p-4 border border-arc-border/50 shadow-xl relative max-w-[90%] self-start"
-                    >
-                      <span className="text-arc-green mb-2 block font-bold text-xs lowercase font-mono">symbionxyz_bot</span>
-                      <p className="text-xs font-mono text-gray-300 lowercase leading-relaxed">
-                        BIG NEWS! 🚨 Get ready to level up with DEVI 🔥🔮 This revolutionary tool is taking the crypto world by storm! 💥 Limited time offer: 2 USDC 🔒 Don't miss out! 💸
-                      </p>
-                      
-                      <div className="mt-3 p-3 bg-black/30 rounded-lg border border-arc-border/30">
-                        <span className="text-[10px] text-gray-400 font-mono block mb-1">👉 get it here:</span>
-                        <span className="text-blue-400 break-all text-[10px] font-mono hover:underline cursor-pointer">
-                          symbion-phi.vercel.app/buy/1?ref=0x111...
-                        </span>
-                      </div>
-                      
-                      <div className="text-[9px] text-gray-500 text-right mt-2 font-mono">now</div>
-                    </motion.div>
+                  <div className="flex-1 p-4 flex flex-col justify-end pb-16 gap-4 relative bg-[#0F172A] z-0 overflow-hidden">
+                    {messages.map((msg, idx) => (
+                      <motion.div 
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                        className="bg-[#1E293B] rounded-2xl rounded-bl-none p-4 border border-arc-border/50 shadow-xl relative max-w-[90%] self-start"
+                      >
+                        <span className="text-arc-green mb-2 block font-bold text-xs lowercase font-mono">symbionxyz_bot</span>
+                        <p className="text-xs font-mono text-gray-300 lowercase leading-relaxed">
+                          {msg.text}
+                        </p>
+                        
+                        <div className="mt-3 p-3 bg-black/30 rounded-lg border border-arc-border/30">
+                          <span className="text-[10px] text-gray-400 font-mono block mb-1">👉 get it here:</span>
+                          <span className="text-blue-400 break-all text-[10px] font-mono hover:underline cursor-pointer">
+                            {msg.link}
+                          </span>
+                        </div>
+                        
+                        <div className="text-[9px] text-gray-500 text-right mt-2 font-mono">now</div>
+                      </motion.div>
+                    ))}
                   </div>
 
                   {/* Input Area */}
