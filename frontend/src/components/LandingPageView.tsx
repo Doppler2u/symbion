@@ -31,42 +31,105 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
 
       <main className="pt-32 pb-24">
         {/* Hero Section */}
-        <section className="max-w-6xl mx-auto px-6 min-h-[70vh] flex flex-col justify-center relative">
+        <section className="max-w-6xl mx-auto px-6 min-h-[80vh] flex items-center relative py-20">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-arc-green/10 rounded-full animate-[spin_60s_linear_infinite] -z-10 blur-[1px]"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-arc-border/20 rounded-full animate-[spin_40s_linear_infinite_reverse] -z-10 blur-[1px]"></div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-8 max-w-4xl"
-          >
-            <div className="inline-flex items-center gap-2 border border-arc-green/50 bg-arc-green/10 px-4 py-2 text-arc-green text-xs font-mono">
-              <Activity size={14} />
-              <span>ARC_TESTNET_LIVE</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight tracking-tighter">
-              THE <span className="text-arc-green">AGENTIC</span> <br/>
-              ECONOMY <br/>
-              PROTOCOL.
-            </h1>
-            
-            <p className="text-gray-400 font-mono text-sm md:text-base max-w-2xl lowercase leading-relaxed">
-              bridge human commerce with autonomous AI workers. deploy trustless escrow contracts to arc testnet and unleash a swarm of ai affiliate agents to sell your products 24/7.
-            </p>
-
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={connectWallet}
-              className="mt-8 px-8 py-5 bg-arc-green text-black font-bold text-sm hover:bg-white transition-colors duration-300 flex items-center gap-4"
+          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="space-y-8"
             >
-              <Terminal size={18} />
-              <span>LAUNCH_MERCHANT_DASHBOARD</span>
-              <ArrowRight size={18} />
-            </motion.button>
-          </motion.div>
+              <div className="inline-flex items-center gap-2 border border-arc-green/50 bg-arc-green/10 px-4 py-2 text-arc-green text-xs font-mono">
+                <Activity size={14} />
+                <span>ARC_TESTNET_LIVE</span>
+              </div>
+              
+              <h1 className="text-5xl md:text-7xl lg:text-7xl xl:text-8xl font-black leading-tight tracking-tighter">
+                THE <span className="text-arc-green">AGENTIC</span> <br/>
+                ECONOMY <br/>
+                PROTOCOL.
+              </h1>
+              
+              <p className="text-gray-400 font-mono text-sm md:text-base max-w-xl lowercase leading-relaxed">
+                bridge human commerce with autonomous AI workers. deploy trustless escrow contracts to arc testnet and unleash a swarm of ai affiliate agents to sell your products 24/7.
+              </p>
+
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={connectWallet}
+                className="mt-8 px-8 py-5 bg-arc-green text-black font-bold text-sm hover:bg-white transition-colors duration-300 flex items-center gap-4 w-fit"
+              >
+                <Terminal size={18} />
+                <span>LAUNCH_MERCHANT_DASHBOARD</span>
+                <ArrowRight size={18} />
+              </motion.button>
+            </motion.div>
+
+            {/* Telegram Phone Mockup */}
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="hidden lg:flex justify-end items-center relative"
+            >
+              <div className="relative w-[320px] h-[640px] bg-[#0E0E0E] border-4 border-arc-border rounded-[3rem] p-3 shadow-[0_0_50px_rgba(0,255,102,0.15)] overflow-hidden flex flex-col">
+                {/* Phone Notch */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-arc-border rounded-b-3xl z-20 flex justify-center items-end pb-2">
+                  <div className="w-12 h-1.5 bg-[#0E0E0E] rounded-full"></div>
+                </div>
+                
+                {/* Telegram App UI */}
+                <div className="w-full h-full bg-[#0F172A] rounded-[2.2rem] overflow-hidden flex flex-col relative border border-arc-border/30">
+                  
+                  {/* Telegram Header */}
+                  <div className="bg-[#1E293B] p-4 pt-10 flex items-center gap-3 border-b border-arc-border/30 z-10 shadow-md">
+                    <div className="w-10 h-10 rounded-full bg-arc-green/20 border border-arc-green flex items-center justify-center text-arc-green font-bold font-mono text-sm shadow-[0_0_10px_rgba(0,255,102,0.2)]">
+                      SY
+                    </div>
+                    <div>
+                      <div className="text-white font-bold text-sm lowercase tracking-wide flex items-center gap-1">
+                        symbion_alpha <Activity size={12} className="text-arc-green"/>
+                      </div>
+                      <div className="text-arc-green text-[10px] lowercase font-mono">1,402 subscribers</div>
+                    </div>
+                  </div>
+                  
+                  {/* Telegram Chat Area */}
+                  <div className="flex-1 p-4 flex flex-col justify-end pb-16 gap-4 relative bg-[#0F172A] z-0">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.5, delay: 1 }}
+                      className="bg-[#1E293B] rounded-2xl rounded-bl-none p-4 border border-arc-border/50 shadow-xl relative max-w-[90%] self-start"
+                    >
+                      <span className="text-arc-green mb-2 block font-bold text-xs lowercase font-mono">symbionxyz_bot</span>
+                      <p className="text-xs font-mono text-gray-300 lowercase leading-relaxed">
+                        BIG NEWS! 🚨 Get ready to level up with DEVI 🔥🔮 This revolutionary tool is taking the crypto world by storm! 💥 Limited time offer: 2 USDC 🔒 Don't miss out! 💸
+                      </p>
+                      
+                      <div className="mt-3 p-3 bg-black/30 rounded-lg border border-arc-border/30">
+                        <span className="text-[10px] text-gray-400 font-mono block mb-1">👉 get it here:</span>
+                        <span className="text-blue-400 break-all text-[10px] font-mono hover:underline cursor-pointer">
+                          symbion-phi.vercel.app/buy/1?ref=0x111...
+                        </span>
+                      </div>
+                      
+                      <div className="text-[9px] text-gray-500 text-right mt-2 font-mono">now</div>
+                    </motion.div>
+                  </div>
+
+                  {/* Input Area */}
+                  <div className="h-12 bg-[#1E293B] border-t border-arc-border/30 absolute bottom-0 w-full flex items-center px-4 justify-center z-10">
+                     <div className="text-gray-500 font-mono text-xs lowercase">mute channel</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </section>
 
         {/* Features Section */}
