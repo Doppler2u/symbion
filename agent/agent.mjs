@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
-import { createPublicClient, http, formatUnits } from 'viem';
+import { createPublicClient, http as viemHttp, formatUnits } from 'viem';
 import { defineChain } from 'viem';
+import http from 'http';
 
 dotenv.config();
 
@@ -40,7 +41,7 @@ const SYMBION_ABI = [
   }
 ];
 
-const publicClient = createPublicClient({ chain: arcTestnet, transport: http() });
+const publicClient = createPublicClient({ chain: arcTestnet, transport: viemHttp() });
 
 async function generatePromotionalText(campaignName, price, commission) {
   if (!GROQ_API_KEY || GROQ_API_KEY === "") {
@@ -67,7 +68,6 @@ async function generatePromotionalText(campaignName, price, commission) {
         throw new Error("Groq API Error: " + JSON.stringify(data));
     }
     let text = data.choices[0].message.content.trim();
-    // Remove wrapping quotes if LLM added them
     if (text.startsWith('"') && text.endsWith('"')) {
         text = text.slice(1, -1);
     }
@@ -91,7 +91,7 @@ async function postToTelegram(text) {
             body: JSON.stringify({
                 chat_id: TELEGRAM_CHAT_ID,
                 text: text,
-                parse_mode: 'HTML' // Optional, lets us format text if we want
+                parse_mode: 'HTML'
             })
         });
 
@@ -106,9 +106,10 @@ async function postToTelegram(text) {
     }
 }
 
-async function runAgent() {
+async function runAgentCycle() {
   console.log("/// SYMBION LIVE AI AGENT WORKER (TELEGRAM EDITION) ///");
   console.log(`Agent Wallet: ${AGENT_WALLET_ADDRESS}`);
+  console.log(`Time: ${new Date().toISOString()}`);
   console.log("Connecting to Arc Testnet...\n");
 
   try {
@@ -125,8 +126,9 @@ async function runAgent() {
 
     console.log(`Found ${activeCamps.length} active campaigns! Generating promotional content...\n`);
 
-    // Only pick the first active campaign to prevent spamming
-    const camp = activeCamps[0];
+    // Pick a random active campaign instead of just the first one
+    const randomIdx = Math.floor(Math.random() * activeCamps.length);
+    const camp = activeCamps[randomIdx];
     const id = Number(camp.id);
     const name = camp.name;
     const price = formatUnits(camp.price, 18);
@@ -145,10 +147,33 @@ async function runAgent() {
     await postToTelegram(finalPost);
     console.log("-".repeat(40));
     
-    console.log("\nAgent cycle complete. Exiting.");
   } catch (error) {
     console.error("Agent encountered an error:", error);
   }
 }
 
-runAgent();
+// --- RENDER COMPATIBILITY ---
+
+// 1. Create a dummy HTTP Server so Render knows the service is alive
+const PORT = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Symbion AI Agent is running normally.\n');
+});
+
+server.listen(PORT, () => {
+    console.log(`✅ Render Health Check Server listening on port ${PORT}`);
+});
+
+// 2. Run the agent cycle continuously (every 1 hour)
+const ONE_HOUR = 60 * 60 * 1000;
+
+// Run it immediately on boot
+runAgentCycle();
+
+// Then run it continuously
+setInterval(() => {
+    runAgentCycle();
+}, ONE_HOUR);
+
+console.log("⏳ Agent scheduled to run every 1 hour.");
