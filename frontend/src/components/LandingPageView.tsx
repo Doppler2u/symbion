@@ -269,6 +269,73 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
           </div>
         </section>
 
+        {/* Referral Mechanics Section */}
+        <section className="max-w-6xl mx-auto px-6 py-32 border-t border-arc-border/50">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-6"
+            >
+              <h2 className="text-3xl font-bold mb-4 flex items-center gap-4">
+                <div className="w-2 h-2 bg-arc-green animate-blink"></div>
+                /// THE_REFERRAL_ENGINE
+              </h2>
+              <p className="text-gray-400 font-mono text-sm lowercase leading-relaxed">
+                the symbion smart contract handles complex b2b affiliate logic natively on the arc testnet. when a buyer clicks an agent's referral link (e.g. <span className="text-arc-green">?ref=0xAgentWallet</span>), the contract executes a trustless split.
+              </p>
+              
+              <ul className="space-y-4 mt-8 font-mono text-xs lowercase">
+                <li className="flex gap-4">
+                  <span className="text-arc-green font-bold">[1]</span>
+                  <span className="text-gray-300"><strong>instant settlement:</strong> no net-30 payouts. the moment usdc hits the contract, it is mathematically split and routed to both merchant and affiliate.</span>
+                </li>
+                <li className="flex gap-4">
+                  <span className="text-arc-green font-bold">[2]</span>
+                  <span className="text-gray-300"><strong>anti-fraud:</strong> affiliates cannot buy using their own links. if self-dealing is detected, 100% of the funds securely route to the merchant.</span>
+                </li>
+                <li className="flex gap-4">
+                  <span className="text-arc-green font-bold">[3]</span>
+                  <span className="text-gray-300"><strong>d2c fallback:</strong> if a user buys without an affiliate link, the contract acts as a standard decentralized checkout (like gumroad).</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative bg-arc-panel border border-arc-border p-6 font-mono text-xs text-gray-400 leading-relaxed overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-2 bg-arc-dark border-l border-b border-arc-border text-[10px] text-arc-green">
+                SymbionAffiliate.sol
+              </div>
+              <pre className="mt-4 overflow-x-auto">
+                <code className="text-gray-400">
+                  <span className="text-purple-400">function</span> <span className="text-blue-400">buy</span>(uint256 id, address ref) <span className="text-purple-400">external</span> {'{\n'}
+                  {'  '}Campaign <span className="text-purple-400">memory</span> camp = campaigns[id];<br/>
+                  {'  '}<span className="text-gray-500">// anti-fraud check</span><br/>
+                  {'  '}<span className="text-purple-400">if</span> (ref == msg.sender || ref == camp.merchant) {'{\n'}
+                  {'    '}ref = <span className="text-purple-400">address</span>(0);<br/>
+                  {'  }'}<br/>
+                  <br/>
+                  {'  '}<span className="text-purple-400">if</span> (ref != <span className="text-purple-400">address</span>(0)) {'{\n'}
+                  {'    '}uint256 cut = (camp.price * camp.commissionBps) / 10000;<br/>
+                  {'    '}usdc.transfer(ref, cut); <span className="text-gray-500">// pay ai agent</span><br/>
+                  {'    '}usdc.transfer(camp.merchant, camp.price - cut);<br/>
+                  {'  }'} <span className="text-purple-400">else</span> {'{\n'}
+                  {'    '}usdc.transfer(camp.merchant, camp.price); <span className="text-gray-500">// 100% to merchant</span><br/>
+                  {'  }'}<br/>
+                  {'}'}
+                </code>
+              </pre>
+            </motion.div>
+
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="max-w-6xl mx-auto px-6 py-32 text-center border-t border-arc-border/50">
           <motion.div
