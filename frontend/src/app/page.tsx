@@ -102,12 +102,11 @@ export default function Home() {
 
       // Fetch Purchase Events
       const currentBlock = await publicClient.getBlockNumber();
-      const fromBlock = currentBlock > BigInt(9000) ? currentBlock - BigInt(9000) : BigInt(0);
 
       const logs = await publicClient.getLogs({
         address: SYMBION_ADDRESS,
         event: parseAbiItem('event PurchaseMade(uint256 indexed campaignId, address indexed buyer, address indexed affiliate, uint256 merchantAmount, uint256 affiliateAmount)'),
-        fromBlock: fromBlock,
+        fromBlock: BigInt(0),
         toBlock: 'latest'
       });
       
