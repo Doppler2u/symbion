@@ -43,6 +43,10 @@ const SYMBION_ABI = [
 
 const publicClient = createPublicClient({ chain: arcTestnet, transport: viemHttp() });
 
+// --- MEMORY STATE ---
+const seenCampaigns = new Set();
+let isFirstRun = true;
+
 async function generatePromotionalText(campaignName, price, commission) {
   if (!GROQ_API_KEY || GROQ_API_KEY === "") {
     return `Just discovered an amazing product: ${campaignName}! It only costs ${price} USDC. Get it here:`;
@@ -107,11 +111,6 @@ async function postToTelegram(text) {
 }
 
 async function runAgentCycle() {
-  console.log("/// SYMBION LIVE AI AGENT WORKER (TELEGRAM EDITION) ///");
-  console.log(`Agent Wallet: ${AGENT_WALLET_ADDRESS}`);
-  console.log(`Time: ${new Date().toISOString()}`);
-  console.log("Connecting to Arc Testnet...\n");
-
   try {
     const activeCamps = await publicClient.readContract({
       address: SYMBION_ADDRESS,
@@ -119,61 +118,78 @@ async function runAgentCycle() {
       functionName: 'getActiveCampaigns'
     });
 
-    if (activeCamps.length === 0) {
-      console.log("No active campaigns found. Going back to sleep.");
+    if (isFirstRun) {
+        // Bootup: Memorize all existing campaigns so we don't spam the channel on restart
+        console.log(`[BOOT] Memorizing ${activeCamps.length} existing campaigns to avoid duplicate posts...`);
+        activeCamps.forEach(camp => seenCampaigns.add(Number(camp.id)));
+        isFirstRun = false;
+        return;
+    }
+
+    // Filter for brand new campaigns we haven't seen yet
+    const newCamps = activeCamps.filter(camp => !seenCampaigns.has(Number(camp.id)));
+
+    if (newCamps.length === 0) {
+      console.log(`[SCAN] ${new Date().toLocaleTimeString()} - No new campaigns found. Waiting...`);
       return;
     }
 
-    console.log(`Found ${activeCamps.length} active campaigns! Generating promotional content...\n`);
+    console.log(`\n🚨 FOUND ${newCamps.length} NEW CAMPAIGN(S)! Generating promotional content...\n`);
 
-    // Pick a random active campaign instead of just the first one
-    const randomIdx = Math.floor(Math.random() * activeCamps.length);
-    const camp = activeCamps[randomIdx];
-    const id = Number(camp.id);
-    const name = camp.name;
-    const price = formatUnits(camp.price, 18);
-    const commission = Number(camp.commissionBps) / 100;
-    
-    // Live Affiliate Link
-    const link = `https://symbion-phi.vercel.app/buy/${id}?ref=${AGENT_WALLET_ADDRESS}`;
+    // Process all new campaigns
+    for (const camp of newCamps) {
+        const id = Number(camp.id);
+        const name = camp.name;
+        const price = formatUnits(camp.price, 18);
+        const commission = Number(camp.commissionBps) / 100;
+        
+        // Live Affiliate Link
+        const link = `https://symbion-phi.vercel.app/buy/${id}?ref=${AGENT_WALLET_ADDRESS}`;
 
-    console.log(`--- CAMPAIGN #${id}: ${name} ---`);
-    console.log("Calling Groq LLM (Llama-3.1)...");
-    
-    const promoText = await generatePromotionalText(name, price, commission);
-    const finalPost = `${promoText}\n\n👉 <b>Get it here:</b> ${link}`;
-    
-    console.log(`\n📲 ATTEMPTING TO POST TO TELEGRAM:\n${finalPost}\n`);
-    await postToTelegram(finalPost);
-    console.log("-".repeat(40));
+        console.log(`--- NEW CAMPAIGN #${id}: ${name} ---`);
+        console.log("Calling Groq LLM (Llama-3.1)...");
+        
+        const promoText = await generatePromotionalText(name, price, commission);
+        const finalPost = `${promoText}\n\n👉 <b>Get it here:</b> ${link}`;
+        
+        console.log(`\n📲 ATTEMPTING TO POST TO TELEGRAM:\n${finalPost}\n`);
+        await postToTelegram(finalPost);
+        
+        // Mark as seen!
+        seenCampaigns.add(id);
+        console.log("-".repeat(40));
+    }
     
   } catch (error) {
-    console.error("Agent encountered an error:", error);
+    console.error("Agent encountered an error scanning the blockchain:", error);
   }
 }
 
-// --- RENDER COMPATIBILITY ---
+// --- RENDER COMPATIBILITY & REAL-TIME LISTENER ---
+
+console.log("/// SYMBION REAL-TIME AI AGENT WORKER ///");
+console.log(`Agent Wallet: ${AGENT_WALLET_ADDRESS}`);
 
 // 1. Create a dummy HTTP Server so Render knows the service is alive
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Symbion AI Agent is running normally.\n');
+    res.end('Symbion Real-Time Agent is running normally.\n');
 });
 
 server.listen(PORT, () => {
     console.log(`✅ Render Health Check Server listening on port ${PORT}`);
 });
 
-// 2. Run the agent cycle continuously (every 1 hour)
-const ONE_HOUR = 60 * 60 * 1000;
+// 2. Poll every 15 seconds instead of 1 hour
+const FAST_POLL_INTERVAL = 15 * 1000;
 
-// Run it immediately on boot
+// Run it immediately on boot to initialize memory
 runAgentCycle();
 
-// Then run it continuously
+// Then run it continuously every 15 seconds
 setInterval(() => {
     runAgentCycle();
-}, ONE_HOUR);
+}, FAST_POLL_INTERVAL);
 
-console.log("⏳ Agent scheduled to run every 1 hour.");
+console.log(`⏳ Agent armed. Scanning Arc Testnet every ${FAST_POLL_INTERVAL / 1000} seconds for new campaigns...`);
