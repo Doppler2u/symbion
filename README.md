@@ -1,30 +1,30 @@
 # 🟩 SYMBION_PROTOCOL
 
-**The Agentic Economy Protocol.** Built for the Arc Hackathon.
+**The Decentralized Bounty Protocol.** Built for the Arc Hackathon.
 
-Symbion is a decentralized protocol that bridges human commerce with autonomous AI workers. It allows merchants to deploy trustless escrow contracts to the Arc Testnet and unleashes a swarm of AI affiliate agents to market and sell their digital products 24/7.
+Symbion is a trustless, gig-economy protocol native to the Arc Testnet. It empowers creators to deploy tasks, lock USDC rewards in smart contract escrow, and hire a decentralized workforce of humans and autonomous AI agents to complete them. 
 
 ## 🌐 Live Demos
-- **Merchant Dashboard:** [symbion-phi.vercel.app](https://symbion-phi.vercel.app)
-- **Live AI Agent (Telegram):** [t.me/symbionxyz_bot](https://t.me/symbionxyz_bot) *(Watch the agent post live affiliate links here!)*
+- **Decentralized Bounty Dashboard:** [symbion-phi.vercel.app](https://symbion-phi.vercel.app)
+- **Live AI Agent (Telegram):** [t.me/symbion_bounties](https://t.me/symbion_bounties) *(Watch the agent broadcast new bounty tasks here!)*
 
 ## 🚀 Architecture Flow
 
-1. **DEPLOY:** Merchants list digital goods (Software, APIs, Courses) on the Arc Testnet via the Symbion Dashboard.
-2. **DISCOVER:** Autonomous AI Agents scan the blockchain for active campaigns and use **Groq (Llama-3.1)** to generate dynamic, hype-filled promotional posts. The agents automatically post these affiliate links to **Telegram**.
-3. **PURCHASE:** Customers click the AI Agent's unique affiliate link and pay in USDC.
-4. **SETTLE:** The Symbion smart contract instantly splits the revenue—routing the merchant's cut directly to them, and the commission directly to the AI Agent's wallet.
+1. **CREATE:** Creators define a task (e.g., "Write a Twitter Thread"), set the max winners, and lock the total USDC reward into the Symbion escrow contract on Arc Testnet.
+2. **DISCOVER:** Human hunters browse the dashboard, while autonomous AI Agents scan the blockchain and broadcast active bounties to Telegram using **Groq (Llama-3.1)**.
+3. **SUBMIT:** Hunters complete the work and submit their public proof URLs (tweets, PRs, videos) directly to the blockchain. 
+4. **REWARD:** Creators review the work on the dashboard. With a single click of "Select Winner", the smart contract instantly releases the locked USDC to the hunter's wallet.
 
-## 🔐 Trustless Anti-Fraud Security
-The protocol is mathematically secured against Sybil attacks and self-dealing:
-- **Affiliates cannot self-refer:** If an affiliate tries to buy a product using their own link, the contract blocks the commission and routes 100% of the funds to the merchant.
-- **Merchants cannot self-deal:** Merchants cannot purchase their own products to artificially inflate volume or steal commissions.
-- **Direct-to-Consumer Mode:** If a buyer visits without an affiliate link, the contract recognizes this and safely routes 100% of the payment to the merchant, acting as a standard decentralized checkout (like Gumroad).
+## 🔐 Trustless Escrow Security
+The protocol removes the need for invoices, trust, or net-30 payouts:
+- **Locked Liquidity:** The smart contract rejects bounty creation unless 100% of the USDC reward is deposited upfront. Hunters *know* the money is guaranteed.
+- **Immutable Proof:** All submissions are logged on-chain. Creators cannot deny receiving the proof.
+- **1-Click Settlement:** The exact moment a creator approves a submission, the smart contract executes a native blockchain transfer to the hunter. No intermediaries.
 
 ## 🛠 Tech Stack
 
 - **Smart Contracts:** Solidity, Foundry (Deployed to Arc Testnet)
-- **Frontend / Merchant Dashboard:** Next.js 14, TailwindCSS, Framer Motion, viem (Web3)
+- **Frontend Dashboard:** Next.js 14, TailwindCSS, Framer Motion, viem (Web3)
 - **AI Agent Worker:** Node.js, Groq API (Llama-3.1), Telegram Bot API, viem
 - **Payments:** Circle USDC (Testnet)
 
@@ -32,15 +32,15 @@ The protocol is mathematically secured against Sybil attacks and self-dealing:
 
 ```text
 symbion/
-├── src/            # Solidity Smart Contracts (SymbionAffiliate.sol)
+├── src/            # Solidity Smart Contracts (SymbionBounty.sol)
 ├── script/         # Foundry Deployment Scripts
-├── frontend/       # Next.js Merchant Dashboard & Checkout UI
+├── frontend/       # Next.js Dashboard & Bounty UI
 └── agent/          # Standalone Node.js AI Agent Worker (Telegram)
 ```
 
 ## ⚙️ How to Run Locally
 
-### 1. The Merchant Dashboard (Frontend)
+### 1. The Bounty Dashboard (Frontend)
 ```bash
 cd frontend
 npm install
@@ -49,7 +49,7 @@ npm run dev
 Open `http://localhost:3000` in your browser. Connect your MetaMask wallet (switched to Arc Testnet).
 
 ### 2. The AI Agent Worker
-The agent runs independently, scanning the blockchain for campaigns and posting them to your Telegram Channel.
+The agent runs independently, scanning the blockchain for new bounties and broadcasting them to your Telegram Channel.
 ```bash
 cd agent
 npm install
@@ -59,7 +59,6 @@ Create a `.env` file inside the `agent` directory:
 GROQ_API_KEY="your_groq_api_key"
 TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
 TELEGRAM_CHAT_ID="@your_channel_name"
-AGENT_WALLET_ADDRESS="0xYourAgentWalletAddress"
 ARC_TESTNET_RPC_URL="https://rpc.testnet.arc.network"
 ```
 Run the agent:
@@ -72,13 +71,13 @@ The AI Agent script includes an integrated HTTP health-check server, allowing it
 
 ## 🔗 Contract Addresses (Arc Testnet)
 
-- **SymbionAffiliate:** `0x74E899Ca241c2f73d39Ab18970F5521B5D78Db63`
+- **SymbionBounty:** `0x2d7312999e1b86e9088eAB0C9D3a58ac98005ad9`
 
 ## 💎 Hackathon Highlights
 - ✅ Built natively on **Arc Testnet**
-- ✅ Agentic AI implementation (autonomous Telegram marketing)
-- ✅ Circle USDC integration for instant global settlements
-- ✅ Hardcoded Anti-Fraud Security
+- ✅ **Agentic AI** implementation (autonomous Telegram marketing of tasks)
+- ✅ **Circle USDC** integration for trustless, instant escrow settlement
+- ✅ Bypasses aggressive RPC Rate Limits via strict concurrency locks
 
 ---
 *Built with brutalist design principles and 100% on-chain transparency.*

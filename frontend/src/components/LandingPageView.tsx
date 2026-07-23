@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Terminal, Shield, Zap, Activity, ArrowRight, Network, Cpu, ShoppingCart, Wallet } from 'lucide-react';
+import { Terminal, Shield, Zap, Activity, ArrowRight, Network, Cpu, CheckCircle, Wallet } from 'lucide-react';
 import Logo from '@/components/Logo';
 
 interface LandingPageViewProps {
@@ -11,8 +11,8 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "BIG NEWS! 🚨 Get ready to level up with DEVI 🔥🔮 This revolutionary tool is taking the crypto world by storm! 💥 Limited time offer: 2 USDC 🔒 Don't miss out! 💸",
-      link: "symbion-phi.vercel.app/buy/1?ref=0x111..."
+      text: "NEW BOUNTY 🔥 10 USDC REWARD! 💸 Write a Twitter thread about Arc Testnet to win! Max winners: 5. 🚀",
+      link: "symbion-phi.vercel.app/bounty/1"
     }
   ]);
 
@@ -20,16 +20,16 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
     const timer1 = setTimeout(() => {
       setMessages(prev => [...prev, {
         id: 2,
-        text: "NEW CAMPAIGN 🚀 Arc Token Sniper just listed! 💎 Fast AF. Price: 5 USDC. Commission: 15% 💸",
-        link: "symbion-phi.vercel.app/buy/2?ref=0x111..."
+        text: "ESCROW LOCKED 🔒 50 USDC deposited for 'Build a React Component'. Only 1 winner! Submit your GitHub PR now! 👨‍💻",
+        link: "symbion-phi.vercel.app/bounty/2"
       }]);
     }, 3000);
     
     const timer2 = setTimeout(() => {
       setMessages(prev => [...prev, {
         id: 3,
-        text: "ALPHA DROP 💎 Premium Trading Signals are live! Earn a massive 50% commission for every sale! 🤯 LFG!",
-        link: "symbion-phi.vercel.app/buy/3?ref=0x111..."
+        text: "PAYOUT ALERT 💎 Creator just selected 3 winners! 30 USDC instantly distributed from smart contract. GG WP! 🎉",
+        link: "symbion-phi.vercel.app/bounty/3"
       }]);
     }, 6000);
 
@@ -75,14 +75,14 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
                 <span>ARC_TESTNET_LIVE</span>
               </div>
               
-              <h1 className="text-5xl md:text-7xl lg:text-7xl xl:text-8xl font-black leading-tight tracking-tighter">
-                THE <span className="text-arc-green">AGENTIC</span> <br/>
-                ECONOMY <br/>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-tight tracking-tighter">
+                DECENTRALIZED <br/>
+                <span className="text-arc-green">BOUNTY</span> <br/>
                 PROTOCOL.
               </h1>
               
               <p className="text-gray-400 font-mono text-sm md:text-base max-w-xl lowercase leading-relaxed">
-                bridge human commerce with autonomous AI workers. deploy trustless escrow contracts to arc testnet and unleash a swarm of ai affiliate agents to sell your products 24/7.
+                create tasks, lock usdc in trustless escrow, and reward a decentralized workforce of humans and ai agents. native to the arc testnet.
               </p>
 
               <motion.button 
@@ -92,7 +92,7 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
                 className="mt-8 px-8 py-5 bg-arc-green text-black font-bold text-sm hover:bg-white transition-colors duration-300 flex items-center gap-4 w-fit"
               >
                 <Terminal size={18} />
-                <span>LAUNCH_MERCHANT_DASHBOARD</span>
+                <span>LAUNCH_DASHBOARD</span>
                 <ArrowRight size={18} />
               </motion.button>
             </motion.div>
@@ -120,9 +120,9 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
                     </div>
                     <div>
                       <div className="text-white font-bold text-sm lowercase tracking-wide flex items-center gap-1">
-                        symbion_alpha <Activity size={12} className="text-arc-green"/>
+                        symbion_bounties <Activity size={12} className="text-arc-green"/>
                       </div>
-                      <div className="text-arc-green text-[10px] lowercase font-mono">1,402 subscribers</div>
+                      <div className="text-arc-green text-[10px] lowercase font-mono">1,402 hunters</div>
                     </div>
                   </div>
                   
@@ -136,13 +136,13 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
                         transition={{ type: "spring", stiffness: 200, damping: 20 }}
                         className="bg-[#1E293B] rounded-2xl rounded-bl-none p-4 border border-arc-border/50 shadow-xl relative max-w-[90%] self-start"
                       >
-                        <span className="text-arc-green mb-2 block font-bold text-xs lowercase font-mono">symbionxyz_bot</span>
+                        <span className="text-arc-green mb-2 block font-bold text-xs lowercase font-mono">symbion_bot</span>
                         <p className="text-xs font-mono text-gray-300 lowercase leading-relaxed">
                           {msg.text}
                         </p>
                         
                         <div className="mt-3 p-3 bg-black/30 rounded-lg border border-arc-border/30">
-                          <span className="text-[10px] text-gray-400 font-mono block mb-1">👉 get it here:</span>
+                          <span className="text-[10px] text-gray-400 font-mono block mb-1">👉 submit proof here:</span>
                           <span className="text-blue-400 break-all text-[10px] font-mono hover:underline cursor-pointer">
                             {msg.link}
                           </span>
@@ -175,11 +175,11 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
               className="space-y-4"
             >
               <div className="w-12 h-12 bg-arc-panel border border-arc-border flex items-center justify-center text-arc-green mb-6">
-                <Network size={24} />
+                <Shield size={24} />
               </div>
-              <h3 className="text-xl font-bold">AUTONOMOUS MARKETERS</h3>
+              <h3 className="text-xl font-bold">TRUSTLESS ESCROW</h3>
               <p className="text-xs text-gray-500 font-mono lowercase leading-relaxed">
-                utilizing the circle agent stack, ai agents autonomously discover your campaigns on-chain, generate dynamic marketing copy via llms, and distribute affiliate links across the web.
+                creators must lock 100% of the usdc reward upfront in the smart contract. hunters never have to worry about not getting paid for approved work.
               </p>
             </motion.div>
 
@@ -191,11 +191,11 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
               className="space-y-4"
             >
               <div className="w-12 h-12 bg-arc-panel border border-arc-border flex items-center justify-center text-arc-green mb-6">
-                <Shield size={24} />
+                <Network size={24} />
               </div>
-              <h3 className="text-xl font-bold">TRUSTLESS SETTLEMENT</h3>
+              <h3 className="text-xl font-bold">DECENTRALIZED PROOF</h3>
               <p className="text-xs text-gray-500 font-mono lowercase leading-relaxed">
-                no more net-30 payouts. our decentralized escrow contracts on the arc network instantly split usdc transactions, routing revenue to the merchant and commission to the ai agent.
+                hunters submit proof of work (links, PRs, documents) directly to the blockchain. all submissions are public, transparent, and verifiable by the community.
               </p>
             </motion.div>
 
@@ -209,9 +209,9 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
               <div className="w-12 h-12 bg-arc-panel border border-arc-border flex items-center justify-center text-arc-green mb-6">
                 <Zap size={24} />
               </div>
-              <h3 className="text-xl font-bold">SEAMLESS ONBOARDING</h3>
+              <h3 className="text-xl font-bold">INSTANT PAYOUTS</h3>
               <p className="text-xs text-gray-500 font-mono lowercase leading-relaxed">
-                built with next.js and viem, our merchant dashboard provides a frictionless web3 experience. deploy campaigns, monitor live agent feeds, and track liquidity in real-time.
+                no invoices or manual transfers. the exact second a creator clicks "select winner", the smart contract instantly releases the usdc from escrow directly to the hunter.
               </p>
             </motion.div>
 
@@ -226,7 +226,7 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
               /// ARCHITECTURE_FLOW
             </h2>
             <p className="text-gray-500 font-mono text-sm lowercase max-w-2xl">
-              how the symbion protocol connects merchants, ai agents, and the arc blockchain in a trustless loop.
+              how the symbion protocol connects creators, hunters, and the arc blockchain in a trustless loop.
             </p>
           </div>
 
@@ -244,10 +244,10 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
               {[
-                { step: "01", title: "DEPLOY", icon: <Terminal size={24}/>, desc: "merchant lists digital good on arc testnet." },
-                { step: "02", title: "DISCOVER", icon: <Cpu size={24}/>, desc: "ai agents scan blockchain & generate telegram posts." },
-                { step: "03", title: "PURCHASE", icon: <ShoppingCart size={24}/>, desc: "customer clicks affiliate link & pays in usdc." },
-                { step: "04", title: "SETTLE", icon: <Wallet size={24}/>, desc: "smart contract instantly splits revenue." }
+                { step: "01", title: "CREATE", icon: <Terminal size={24}/>, desc: "creator deploys task and locks usdc in escrow." },
+                { step: "02", title: "DISCOVER", icon: <Cpu size={24}/>, desc: "hunters & ai agents scan active bounties." },
+                { step: "03", title: "SUBMIT", icon: <CheckCircle size={24}/>, desc: "hunters complete work & submit proof link on-chain." },
+                { step: "04", title: "REWARD", icon: <Wallet size={24}/>, desc: "creator selects winner. smart contract pays instantly." }
               ].map((item, idx) => (
                 <motion.div 
                   key={idx}
@@ -269,7 +269,7 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
           </div>
         </section>
 
-        {/* Referral Mechanics Section */}
+        {/* Escrow Mechanics Section */}
         <section className="max-w-6xl mx-auto px-6 py-32 border-t border-arc-border/50">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             
@@ -281,24 +281,24 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
             >
               <h2 className="text-3xl font-bold mb-4 flex items-center gap-4">
                 <div className="w-2 h-2 bg-arc-green animate-blink"></div>
-                /// THE_REFERRAL_ENGINE
+                /// THE_ESCROW_ENGINE
               </h2>
               <p className="text-gray-400 font-mono text-sm lowercase leading-relaxed">
-                the symbion smart contract handles complex b2b affiliate logic natively on the arc testnet. when a buyer clicks an agent's referral link (e.g. <span className="text-arc-green">?ref=0xAgentWallet</span>), the contract executes a trustless split.
+                the symbion smart contract handles complex b2b bounty logic natively on the arc testnet. when a creator deploys a task, the protocol guarantees trust and instant liquidity execution.
               </p>
               
               <ul className="space-y-4 mt-8 font-mono text-xs lowercase">
                 <li className="flex gap-4">
                   <span className="text-arc-green font-bold">[1]</span>
-                  <span className="text-gray-300"><strong>instant settlement:</strong> no net-30 payouts. the moment usdc hits the contract, it is mathematically split and routed to both merchant and affiliate.</span>
+                  <span className="text-gray-300"><strong>locked liquidity:</strong> bounty creation fails if exact USDC is not provided. funds are mathematically locked in the contract state.</span>
                 </li>
                 <li className="flex gap-4">
                   <span className="text-arc-green font-bold">[2]</span>
-                  <span className="text-gray-300"><strong>anti-fraud:</strong> affiliates cannot buy using their own links. if self-dealing is detected, 100% of the funds securely route to the merchant.</span>
+                  <span className="text-gray-300"><strong>immutable proof:</strong> all submissions are stored on-chain, preventing creators from denying received work.</span>
                 </li>
                 <li className="flex gap-4">
                   <span className="text-arc-green font-bold">[3]</span>
-                  <span className="text-gray-300"><strong>d2c fallback:</strong> if a user buys without an affiliate link, the contract acts as a standard decentralized checkout (like gumroad).</span>
+                  <span className="text-gray-300"><strong>1-click settlement:</strong> when a creator approves a submission, the contract executes a native transfer, completely bypassing intermediaries.</span>
                 </li>
               </ul>
             </motion.div>
@@ -310,24 +310,25 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
               className="relative bg-arc-panel border border-arc-border p-6 font-mono text-xs text-gray-400 leading-relaxed overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-2 bg-arc-dark border-l border-b border-arc-border text-[10px] text-arc-green">
-                SymbionAffiliate.sol
+                SymbionBounty.sol
               </div>
               <pre className="mt-4 overflow-x-auto">
                 <code className="text-gray-400">
-                  <span className="text-purple-400">function</span> <span className="text-blue-400">buy</span>(uint256 id, address ref) <span className="text-purple-400">external</span> {'{\n'}
-                  {'  '}Campaign <span className="text-purple-400">memory</span> camp = campaigns[id];<br/>
-                  {'  '}<span className="text-gray-500">// anti-fraud check</span><br/>
-                  {'  '}<span className="text-purple-400">if</span> (ref == msg.sender || ref == camp.merchant) {'{\n'}
-                  {'    '}ref = <span className="text-purple-400">address</span>(0);<br/>
+                  <span className="text-purple-400">function</span> <span className="text-blue-400">selectWinner</span>(uint256 id, address winner) <span className="text-purple-400">external</span> {'{\n'}
+                  {'  '}Bounty <span className="text-purple-400">storage</span> b = bounties[id];<br/>
+                  {'  '}<span className="text-purple-400">require</span>(msg.sender == b.creator, <span className="text-green-400">"Only creator"</span>);<br/>
+                  <br/>
+                  {'  '}<span className="text-gray-500">// Auto-close if all winners selected</span><br/>
+                  {'  '}b.winnersSelected++;<br/>
+                  {'  '}<span className="text-purple-400">if</span> (b.winnersSelected == b.maxWinners) {'{\n'}
+                  {'    '}b.active = <span className="text-purple-400">false</span>;<br/>
                   {'  }'}<br/>
                   <br/>
-                  {'  '}<span className="text-purple-400">if</span> (ref != <span className="text-purple-400">address</span>(0)) {'{\n'}
-                  {'    '}uint256 cut = (camp.price * camp.commissionBps) / 10000;<br/>
-                  {'    '}usdc.transfer(ref, cut); <span className="text-gray-500">// pay ai agent</span><br/>
-                  {'    '}usdc.transfer(camp.merchant, camp.price - cut);<br/>
-                  {'  }'} <span className="text-purple-400">else</span> {'{\n'}
-                  {'    '}usdc.transfer(camp.merchant, camp.price); <span className="text-gray-500">// 100% to merchant</span><br/>
-                  {'  }'}<br/>
+                  {'  '}<span className="text-gray-500">// Pay the winner instantly from escrow</span><br/>
+                  {'  '}(<span className="text-purple-400">bool</span> success, ) = winner.call{'{value: b.rewardPerWinner}'}(<span className="text-green-400">""</span>);<br/>
+                  {'  '}<span className="text-purple-400">require</span>(success, <span className="text-green-400">"Transfer failed"</span>);<br/>
+                  <br/>
+                  {'  '}<span className="text-purple-400">emit</span> WinnerSelected(id, winner, b.rewardPerWinner);<br/>
                   {'}'}
                 </code>
               </pre>
@@ -346,9 +347,9 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
           >
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-arc-green to-transparent opacity-50"></div>
             
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">READY TO INITIALIZE?</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">READY TO DEPLOY?</h2>
             <p className="text-gray-400 font-mono text-sm mb-12 max-w-xl mx-auto lowercase">
-              connect your wallet to the arc testnet and deploy your first agentic campaign in seconds.
+              connect your wallet to the arc testnet and create your first bounty task in seconds.
             </p>
             
             <button 
@@ -362,7 +363,7 @@ export default function LandingPageView({ connectWallet }: LandingPageViewProps)
       </main>
       
       <footer className="border-t border-arc-border py-8 text-center text-xs text-gray-600 font-mono">
-        SYMBION_PROTOCOL_V1.0 // BUILT_FOR_ARC_HACKATHON
+        SYMBION_BOUNTIES_V2.0 // BUILT_FOR_ARC_HACKATHON
       </footer>
     </div>
   );

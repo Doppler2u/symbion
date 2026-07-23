@@ -18,19 +18,26 @@ const arcTestnet = defineChain({
   rpcUrls: { default: { http: ["https://rpc.testnet.arc.network"] } },
 });
 
+// Module-level lock to prevent Next.js Strict Mode from firing duplicate concurrent RPC requests
+let isFetchingData = false;
+
 export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [totalDisbursed, setTotalDisbursed] = useState("0.00");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [price, setPrice] = useState("");
-  const [commission, setCommission] = useState("");
-  const [campaignName, setCampaignName] = useState("");
+  
+  // Bounty Form State
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [rewardPerWinner, setRewardPerWinner] = useState("");
+  const [maxWinners, setMaxWinners] = useState("");
+  
   const [deploying, setDeploying] = useState(false);
   const [publicClient, setPublicClient] = useState<any>(null);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
-  const [campaignsList, setCampaignsList] = useState<any[]>([]);
-  const [agentFeed, setAgentFeed] = useState<any[]>([]);
-  const [campaignFilter, setCampaignFilter] = useState<'ALL' | 'MINE'>('ALL');
+  const [bountiesList, setBountiesList] = useState<any[]>([]);
+  const [activityFeed, setActivityFeed] = useState<any[]>([]);
+  const [bountyFilter, setBountyFilter] = useState<'ALL' | 'MINE'>('ALL');
 
   useEffect(() => {
     setPublicClient(createPublicClient({ chain: arcTestnet, transport: http() }));
@@ -98,54 +105,82 @@ export default function Home() {
   };
 
   const fetchData = async () => {
-    if (!publicClient) return;
+    if (!publicClient || isFetchingData) return;
+    isFetchingData = true;
+    
     try {
       const balance = await publicClient.getBalance({ address: SYMBION_ADDRESS });
       setTotalDisbursed(formatUnits(balance, 18));
       
-      const activeCamps = await publicClient.readContract({
+      await new Promise(resolve => setTimeout(resolve, 1200));
+
+      const activeBounties = await publicClient.readContract({
         address: SYMBION_ADDRESS,
         abi: SYMBION_ABI,
-        functionName: 'getActiveCampaigns'
+        functionName: 'getActiveBounties'
       });
       
-      const fetched = activeCamps.map((camp: any) => ({
-        id: Number(camp.id),
-        merchant: camp.merchant,
-        name: camp.name,
-        price: formatUnits(camp.price, 18),
-        commission: Number(camp.commissionBps) / 100
+      const fetched = activeBounties.map((b: any) => ({
+        id: Number(b.id),
+        creator: b.creator,
+        name: b.name,
+        rewardPerWinner: formatUnits(b.rewardPerWinner, 18),
+        maxWinners: Number(b.maxWinners),
+        winnersSelected: Number(b.winnersSelected)
       }));
-      setCampaignsList(fetched);
+      setBountiesList(fetched);
 
-      // Fetch Purchase Events (Arc Testnet RPC limit is 10k blocks per request)
+      await new Promise(resolve => setTimeout(resolve, 1200));
+
+      // Fetch Winner Selected Events
       const currentBlock = await publicClient.getBlockNumber();
-      const fromBlock = currentBlock > BigInt(9999) ? currentBlock - BigInt(9999) : BigInt(0);
+      let collectedLogs: any[] = [];
+      let toBlock = currentBlock;
+      let maxBatches = 3; 
 
-      const logs = await publicClient.getLogs({
-        address: SYMBION_ADDRESS,
-        event: parseAbiItem('event PurchaseMade(uint256 indexed campaignId, address indexed buyer, address indexed affiliate, uint256 merchantAmount, uint256 affiliateAmount)'),
-        fromBlock: fromBlock,
-        toBlock: 'latest'
-      });
+      while (maxBatches > 0 && collectedLogs.length < 5 && toBlock > BigInt(0)) {
+        let fromBlock = toBlock > BigInt(9999) ? toBlock - BigInt(9999) : BigInt(0);
+        
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        
+        try {
+          const batchLogs = await publicClient.getLogs({
+            address: SYMBION_ADDRESS,
+            event: parseAbiItem('event WinnerSelected(uint256 indexed bountyId, address indexed winner, uint256 amountPaid)'),
+            fromBlock: fromBlock,
+            toBlock: toBlock
+          });
+          collectedLogs = [...batchLogs, ...collectedLogs];
+        } catch(e: any) {
+          console.error("Batch log fetch error:", e.message);
+          break; 
+        }
+
+        toBlock = fromBlock - BigInt(1);
+        maxBatches--;
+        
+        if (maxBatches > 0 && collectedLogs.length < 5) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
       
-      const validLogs = logs.filter((log: any) => log.args.affiliate !== '0x0000000000000000000000000000000000000000');
-      
-      const feed = validLogs.map((log: any) => ({
+      const feed = collectedLogs.map((log: any) => ({
         hash: log.transactionHash,
-        agent: log.args.affiliate,
-        amount: formatUnits(log.args.affiliateAmount, 18),
-        status: 'SETTLED'
+        winner: log.args.winner,
+        amount: formatUnits(log.args.amountPaid, 18),
+        status: 'PAID'
       })).reverse().slice(0, 5); // get last 5
       
-      setAgentFeed(feed);
+      setActivityFeed(feed);
 
     } catch (error) {
       console.error("Fetch Data Error:", error);
+    } finally {
+      isFetchingData = false;
     }
   };
 
-  const deployCampaign = async () => {
+  const deployBounty = async () => {
     if (!walletAddress || !window.ethereum) {
       setNotification({ message: "CONNECTION_REQUIRED // CONNECT_WALLET_FIRST", type: 'error' });
       setTimeout(() => setNotification(null), 5000);
@@ -159,23 +194,25 @@ export default function Home() {
         transport: custom(window.ethereum)
       });
       
-      const priceWei = parseUnits(price, 18);
-      const commissionBps = BigInt(parseFloat(commission) * 100); // 10% = 1000 bps
+      const rewardWei = parseUnits(rewardPerWinner, 18);
+      const totalRequired = rewardWei * BigInt(maxWinners);
 
       const hash = await walletClient.writeContract({
         address: SYMBION_ADDRESS,
         abi: SYMBION_ABI,
-        functionName: 'createCampaign',
-        args: [campaignName || "Untitled Campaign", priceWei, commissionBps]
+        functionName: 'createBounty',
+        args: [name || "Untitled Bounty", description || "No description provided.", rewardWei, BigInt(maxWinners)],
+        value: totalRequired
       });
 
       console.log("Tx Hash:", hash);
-      setNotification({ message: `CAMPAIGN_DEPLOYED // TX: ${hash}`, type: 'success' });
+      setNotification({ message: `BOUNTY_CREATED // ESCROW_LOCKED // TX: ${hash}`, type: 'success' });
       setTimeout(() => setNotification(null), 5000);
       setIsModalOpen(false);
-      setPrice("");
-      setCommission("");
-      setCampaignName("");
+      setName("");
+      setDescription("");
+      setRewardPerWinner("");
+      setMaxWinners("");
       setTimeout(fetchData, 3000); // refresh list
     } catch (error) {
       console.error(error);
@@ -222,6 +259,11 @@ export default function Home() {
           </h1>
         </div>
         
+        <div className="hidden md:flex items-center gap-8 text-sm font-bold tracking-widest">
+          <Link href="/" className="text-arc-green border-b border-arc-green pb-1">DASHBOARD</Link>
+          <Link href="/bounties" className="text-gray-400 hover:text-white transition-colors pb-1">ACTIVE_BOUNTY_TASKS</Link>
+        </div>
+
         <div className="flex gap-4">
           <button onClick={walletAddress ? disconnectWallet : connectWallet} className="group relative px-6 py-3 bg-transparent border border-arc-border hover:border-arc-green transition-colors overflow-hidden">
             <span className="relative z-10 text-sm font-bold group-hover:text-black transition-colors">
@@ -285,14 +327,14 @@ export default function Home() {
             <h2 className="text-arc-green text-xs mb-6">/// COMMAND_INPUT</h2>
             <div className="flex-grow flex flex-col justify-center gap-6">
               <p className="text-sm text-gray-400 normal-case font-mono">
-                Initialize a new smart contract campaign. Allocate USDC to autonomous agents to drive on-chain conversions.
+                Create a new bounty task. USDC will be securely locked in escrow until you approve the winners.
               </p>
               <button 
                 onClick={() => setIsModalOpen(true)}
                 className="w-full py-4 bg-white text-black font-bold hover:bg-arc-green transition-colors duration-300 flex items-center justify-center gap-3"
               >
                 <Terminal size={18} />
-                <span>DEPLOY_CAMPAIGN</span>
+                <span>CREATE_BOUNTY_TASK</span>
               </button>
             </div>
           </motion.div>
@@ -302,8 +344,8 @@ export default function Home() {
         <div className="lg:col-span-8 flex flex-col gap-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { label: "POOL_LIQUIDITY", value: totalDisbursed, icon: <Database size={16}/> },
-              { label: "SECURE_TRANSACTIONS", value: "89,104", icon: <Shield size={16}/> },
+              { label: "PROTOCOL_ESCROW", value: totalDisbursed, icon: <Database size={16}/> },
+              { label: "TASKS_COMPLETED", value: "1,204", icon: <Shield size={16}/> },
               { label: "NETWORK_TPS", value: "4,092", icon: <Zap size={16}/> }
             ].map((metric, idx) => (
               <motion.div 
@@ -329,7 +371,7 @@ export default function Home() {
             className="border border-arc-border bg-arc-panel p-6 flex-grow overflow-x-auto"
           >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-arc-green text-xs">/// LIVE_AGENT_FEED</h2>
+              <h2 className="text-arc-green text-xs">/// RECENT_PAYOUTS</h2>
               <div className="w-2 h-2 bg-arc-green animate-blink"></div>
             </div>
             
@@ -337,15 +379,15 @@ export default function Home() {
               <thead className="text-gray-500 border-b border-arc-border">
                 <tr>
                   <th className="pb-4 font-normal">TX_HASH</th>
-                  <th className="pb-4 font-normal">AGENT_ID</th>
-                  <th className="pb-4 font-normal text-right">COMMISSION (USDC)</th>
+                  <th className="pb-4 font-normal">WINNER_ADDRESS</th>
+                  <th className="pb-4 font-normal text-right">REWARD (USDC)</th>
                   <th className="pb-4 font-normal text-right">STATUS</th>
                 </tr>
               </thead>
               <tbody className="font-mono normal-case">
-                {agentFeed.length === 0 ? (
+                {activityFeed.length === 0 ? (
                   <tr><td colSpan={4} className="py-4 text-gray-500 text-center">NO_TRANSACTIONS_YET</td></tr>
-                ) : agentFeed.map((row, idx) => (
+                ) : activityFeed.map((row, idx) => (
                   <tr key={idx} className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200">
                     <td className="py-4 text-arc-green">
                       <a href={`https://testnet.arcscan.app/tx/${row.hash}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
@@ -353,86 +395,10 @@ export default function Home() {
                       </a>
                     </td>
                     <td className="py-4 text-gray-400">
-                      {row.agent.slice(0, 6)}...{row.agent.slice(-4)}
+                      {row.winner.slice(0, 6)}...{row.winner.slice(-4)}
                     </td>
                     <td className="py-4 text-right font-bold text-white">+ {row.amount}</td>
-                    <td className={`py-4 text-right ${row.status === 'SETTLED' ? 'text-white' : 'text-yellow-500'}`}>{row.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </motion.div>
-
-          {/* Deployed Campaigns */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="border border-arc-border bg-arc-panel p-6 flex-grow overflow-x-auto"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-arc-green text-xs">/// ACTIVE_CAMPAIGNS</h2>
-              <div className="flex gap-4 text-xs font-mono">
-                <button 
-                  onClick={() => setCampaignFilter('ALL')} 
-                  className={`${campaignFilter === 'ALL' ? 'text-arc-green border-b border-arc-green' : 'text-gray-500 hover:text-white'} transition-colors pb-1`}
-                >
-                  [ ALL ]
-                </button>
-                <button 
-                  onClick={() => setCampaignFilter('MINE')} 
-                  className={`${campaignFilter === 'MINE' ? 'text-arc-green border-b border-arc-green' : 'text-gray-500 hover:text-white'} transition-colors pb-1`}
-                >
-                  [ MINE ]
-                </button>
-              </div>
-            </div>
-            
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="text-gray-500 border-b border-arc-border">
-                <tr>
-                  <th className="pb-4 font-normal">ID</th>
-                  <th className="pb-4 font-normal">NAME</th>
-                  <th className="pb-4 font-normal">PRICE (USDC)</th>
-                  <th className="pb-4 font-normal text-right">COMMISSION</th>
-                  <th className="pb-4 font-normal text-right">AGENT_REF_LINK</th>
-                </tr>
-              </thead>
-              <tbody className="font-mono normal-case text-xs">
-                {(campaignFilter === 'MINE' && walletAddress 
-                  ? campaignsList.filter(c => c.merchant.toLowerCase() === walletAddress.toLowerCase()) 
-                  : (walletAddress ? campaignsList.filter(c => c.merchant.toLowerCase() !== walletAddress.toLowerCase()) : campaignsList)
-                ).length === 0 ? (
-                  <tr><td colSpan={5} className="py-4 text-gray-500 text-center">NO_CAMPAIGNS_FOUND</td></tr>
-                ) : (campaignFilter === 'MINE' && walletAddress 
-                  ? campaignsList.filter(c => c.merchant.toLowerCase() === walletAddress.toLowerCase()) 
-                  : (walletAddress ? campaignsList.filter(c => c.merchant.toLowerCase() !== walletAddress.toLowerCase()) : campaignsList)
-                ).map((camp, idx) => (
-                  <tr key={idx} className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200">
-                    <td className="py-4 text-white">#{camp.id}</td>
-                    <td className="py-4 text-arc-green">
-                      <Link href={`/buy/${camp.id}?ref=${walletAddress || '0x0000000000000000000000000000000000000000'}`} target="_blank" className="hover:text-white transition-colors underline decoration-arc-green/30 underline-offset-4">
-                        {camp.name}
-                      </Link>
-                    </td>
-                    <td className="py-4 text-gray-400">{camp.price}</td>
-                    <td className="py-4 text-right font-bold text-white">{camp.commission}%</td>
-                    <td className="py-4 text-right text-gray-500 flex items-center justify-end gap-2">
-                      <span className="truncate max-w-[150px]">
-                        {typeof window !== 'undefined' ? window.location.host : 'localhost:3000'}/buy/{camp.id}?ref=[AGENT]
-                      </span>
-                      <button 
-                        onClick={() => {
-                          const link = `${window.location.origin}/buy/${camp.id}?ref=${walletAddress || '0x0000000000000000000000000000000000000000'}`;
-                          navigator.clipboard.writeText(link);
-                          setNotification({ message: 'AFFILIATE_LINK_COPIED_TO_CLIPBOARD', type: 'info' });
-                          setTimeout(() => setNotification(null), 3000);
-                        }}
-                        className="text-arc-border hover:text-white transition-colors p-1"
-                      >
-                        <Copy size={14} />
-                      </button>
-                    </td>
+                    <td className={`py-4 text-right ${row.status === 'PAID' ? 'text-white' : 'text-yellow-500'}`}>{row.status}</td>
                   </tr>
                 ))}
               </tbody>
@@ -462,59 +428,66 @@ export default function Home() {
               
               <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
                 <div className="w-2 h-2 bg-arc-green animate-blink"></div>
-                DEPLOY_CAMPAIGN
+                CREATE_BOUNTY_TASK
               </h2>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-2">CAMPAIGN NAME</label>
+                  <label className="block text-xs text-gray-400 mb-2">TASK NAME</label>
                   <input 
                     type="text" 
-                    value={campaignName}
-                    onChange={(e) => setCampaignName(e.target.value)}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     className="w-full bg-arc-dark border border-arc-border p-3 text-white font-mono focus:border-arc-green outline-none transition-colors"
-                    placeholder="e.g. DevPro API"
+                    placeholder="e.g. Write a Twitter Thread"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-400 mb-2">PRODUCT SECURE URL (DELIVERED ON PURCHASE)</label>
-                  <div className="w-full bg-arc-dark/50 border border-arc-border border-dashed p-3 text-gray-500 font-mono text-sm cursor-not-allowed">
-                    [ PRODUCTION_FEATURE_LOCKED ]
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2 lowercase">
-                    (In a production environment, this would be your secure download link, API key, or course access token)
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-gray-400 mb-2">PRODUCT PRICE (USDC)</label>
+                  <label className="block text-xs text-gray-400 mb-2">TASK DESCRIPTION</label>
                   <input 
-                    type="number" 
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
+                    type="text" 
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     className="w-full bg-arc-dark border border-arc-border p-3 text-white font-mono focus:border-arc-green outline-none transition-colors"
-                    placeholder="5.00"
+                    placeholder="Must tag @project and use #web3"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-2">REWARD (USDC)</label>
+                      <input 
+                        type="number" 
+                        value={rewardPerWinner}
+                        onChange={(e) => setRewardPerWinner(e.target.value)}
+                        className="w-full bg-arc-dark border border-arc-border p-3 text-white font-mono focus:border-arc-green outline-none transition-colors"
+                        placeholder="10.00"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-2">MAX WINNERS</label>
+                      <input 
+                        type="number" 
+                        value={maxWinners}
+                        onChange={(e) => setMaxWinners(e.target.value)}
+                        className="w-full bg-arc-dark border border-arc-border p-3 text-white font-mono focus:border-arc-green outline-none transition-colors"
+                        placeholder="5"
+                      />
+                    </div>
                 </div>
                 
-                <div>
-                  <label className="block text-xs text-gray-400 mb-2">AGENT COMMISSION (%)</label>
-                  <input 
-                    type="number" 
-                    value={commission}
-                    onChange={(e) => setCommission(e.target.value)}
-                    className="w-full bg-arc-dark border border-arc-border p-3 text-white font-mono focus:border-arc-green outline-none transition-colors"
-                    placeholder="15"
-                  />
+                <div className="text-xs text-gray-500 border border-yellow-500/30 p-3 bg-yellow-500/10">
+                    <span className="text-yellow-500">ESCROW LOCK:</span> You will lock a total of <b>{(Number(rewardPerWinner) || 0) * (Number(maxWinners) || 0)} USDC</b> in the smart contract.
                 </div>
 
                 <button 
-                  onClick={deployCampaign}
+                  onClick={deployBounty}
                   disabled={deploying}
                   className="w-full py-4 bg-arc-green text-black font-bold hover:bg-white transition-colors duration-300 mt-4 disabled:opacity-50"
                 >
-                  {deploying ? "EXECUTING_TRANSACTION..." : "SIGN_AND_DEPLOY"}
+                  {deploying ? "LOCKING_FUNDS..." : "DEPOSIT_&_CREATE"}
                 </button>
               </div>
             </motion.div>
@@ -523,7 +496,7 @@ export default function Home() {
       </AnimatePresence>
 
       <footer className="mt-12 pt-6 border-t border-arc-border flex justify-between text-xs text-gray-500 relative z-10">
-        <div>SYMBION_PROTOCOL_V1.0</div>
+        <div>SYMBION_BOUNTIES_V2.0</div>
         <div>ARC_TESTNET_ENABLED</div>
       </footer>
     </div>

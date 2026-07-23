@@ -9,7 +9,7 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const AGENT_WALLET_ADDRESS = process.env.AGENT_WALLET_ADDRESS || "0x1111111111111111111111111111111111111111";
-const SYMBION_ADDRESS = "0x74E899Ca241c2f73d39Ab18970F5521B5D78Db63";
+const SYMBION_ADDRESS = "0x2d7312999e1b86e9088eAB0C9D3a58ac98005ad9";
 
 const arcTestnet = defineChain({
   id: 5042002,
@@ -22,17 +22,20 @@ const arcTestnet = defineChain({
 const SYMBION_ABI = [
   {
     "type": "function",
-    "name": "getActiveCampaigns",
+    "name": "getActiveBounties",
     "inputs": [],
     "outputs": [
       {
         "type": "tuple[]",
         "components": [
           { "name": "id", "type": "uint256" },
-          { "name": "merchant", "type": "address" },
+          { "name": "creator", "type": "address" },
           { "name": "name", "type": "string" },
-          { "name": "price", "type": "uint256" },
-          { "name": "commissionBps", "type": "uint256" },
+          { "name": "description", "type": "string" },
+          { "name": "totalReward", "type": "uint256" },
+          { "name": "rewardPerWinner", "type": "uint256" },
+          { "name": "maxWinners", "type": "uint256" },
+          { "name": "winnersSelected", "type": "uint256" },
           { "name": "active", "type": "bool" }
         ]
       }
@@ -44,15 +47,15 @@ const SYMBION_ABI = [
 const publicClient = createPublicClient({ chain: arcTestnet, transport: viemHttp() });
 
 // --- MEMORY STATE ---
-const seenCampaigns = new Set();
+const seenBounties = new Set();
 let isFirstRun = true;
 
-async function generatePromotionalText(campaignName, price, commission) {
+async function generatePromotionalText(bountyName, rewardPerWinner, maxWinners) {
   if (!GROQ_API_KEY || GROQ_API_KEY === "") {
-    return `Just discovered an amazing product: ${campaignName}! It only costs ${price} USDC. Get it here:`;
+    return `Just discovered an amazing bounty: ${bountyName}! Get paid ${rewardPerWinner} USDC. Get started here:`;
   }
 
-  const prompt = `You are an autonomous AI affiliate marketer on Telegram. Write a highly engaging, viral message to promote a product called "${campaignName}". The price is ${price} USDC. 
+  const prompt = `You are an autonomous AI recruiter on Telegram. Write a highly engaging, viral message to recruit people for a bounty task called "${bountyName}". The reward is ${rewardPerWinner} USDC per winner, and there will be ${maxWinners} winners. 
 
 FORMAT RULES:
 - DO NOT write a single paragraph.
@@ -85,7 +88,7 @@ FORMAT RULES:
     return text;
   } catch (error) {
     console.error("LLM Error:", error);
-    return `🔥 Buy ${campaignName} now for ${price} USDC!`;
+    return `🔥 Complete the ${bountyName} task and earn ${rewardPerWinner} USDC!`;
   }
 }
 
@@ -119,51 +122,63 @@ async function postToTelegram(text) {
 
 async function runAgentCycle() {
   try {
-    const activeCamps = await publicClient.readContract({
+    const activeBounties = await publicClient.readContract({
       address: SYMBION_ADDRESS,
       abi: SYMBION_ABI,
-      functionName: 'getActiveCampaigns'
+      functionName: 'getActiveBounties'
     });
 
     if (isFirstRun) {
-        // Bootup: Memorize all existing campaigns so we don't spam the channel on restart
-        console.log(`[BOOT] Memorizing ${activeCamps.length} existing campaigns to avoid duplicate posts...`);
-        activeCamps.forEach(camp => seenCampaigns.add(Number(camp.id)));
+        // Bootup: Memorize all existing bounties so we don't spam the channel on restart
+        console.log(`[BOOT] Memorizing ${activeBounties.length} existing bounties to avoid duplicate posts...`);
+        activeBounties.forEach(b => seenBounties.add(Number(b.id)));
         isFirstRun = false;
         return;
     }
 
-    // Filter for brand new campaigns we haven't seen yet
-    const newCamps = activeCamps.filter(camp => !seenCampaigns.has(Number(camp.id)));
+    // Filter for brand new bounties we haven't seen yet
+    const newBounties = activeBounties.filter(b => !seenBounties.has(Number(b.id)));
 
-    if (newCamps.length === 0) {
-      console.log(`[SCAN] ${new Date().toLocaleTimeString()} - No new campaigns found. Waiting...`);
+    if (newBounties.length === 0) {
+      console.log(`[SCAN] ${new Date().toLocaleTimeString()} - No new bounties found. Waiting...`);
       return;
     }
 
-    console.log(`\n🚨 FOUND ${newCamps.length} NEW CAMPAIGN(S)! Generating promotional content...\n`);
+    console.log(`\n🚨 FOUND ${newBounties.length} NEW BOUNTY(S)! Generating promotional content...\n`);
 
-    // Process all new campaigns
-    for (const camp of newCamps) {
-        const id = Number(camp.id);
-        const name = camp.name;
-        const price = formatUnits(camp.price, 18);
-        const commission = Number(camp.commissionBps) / 100;
+    // Process all new bounties
+    for (const b of newBounties) {
+        const id = Number(b.id);
+        const name = b.name;
+        const rewardPerWinner = formatUnits(b.rewardPerWinner, 18);
+        const maxWinners = Number(b.maxWinners);
         
-        // Live Affiliate Link
-        const link = `https://symbion-phi.vercel.app/buy/${id}?ref=${AGENT_WALLET_ADDRESS}`;
+        // Live Bounty Link
+        const link = `https://symbion-phi.vercel.app/bounty/${id}`;
 
-        console.log(`--- NEW CAMPAIGN #${id}: ${name} ---`);
+        console.log(`--- NEW BOUNTY #${id}: ${name} ---`);
         console.log("Calling Groq LLM (Llama-3.1)...");
         
-        const promoText = await generatePromotionalText(name, price, commission);
-        const finalPost = `${promoText}\n\n👉 <b>Get it here:</b> ${link}`;
+        const promoText = await generatePromotionalText(name, rewardPerWinner, maxWinners);
+        
+        const message = `
+🟩 *NEW BOUNTY TASK AVAILABLE* 🟩
+
+📌 *Task:* ${name}
+📝 *Description:* ${b.description}
+💰 *Reward per Winner:* ${rewardPerWinner} USDC
+🏆 *Total Winners Allowed:* ${maxWinners}
+
+🔗 *Submit Proof Here:*
+${link}`;
+
+        const finalPost = `${promoText}\n\n${message}`;
         
         console.log(`\n📲 ATTEMPTING TO POST TO TELEGRAM:\n${finalPost}\n`);
         await postToTelegram(finalPost);
         
         // Mark as seen!
-        seenCampaigns.add(id);
+        seenBounties.add(id);
         console.log("-".repeat(40));
     }
     
@@ -199,4 +214,4 @@ setInterval(() => {
     runAgentCycle();
 }, FAST_POLL_INTERVAL);
 
-console.log(`⏳ Agent armed. Scanning Arc Testnet every ${FAST_POLL_INTERVAL / 1000} seconds for new campaigns...`);
+console.log(`⏳ Agent armed. Scanning Arc Testnet every ${FAST_POLL_INTERVAL / 1000} seconds for new bounties...`);

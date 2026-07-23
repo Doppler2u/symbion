@@ -1,71 +1,97 @@
-export const SYMBION_ADDRESS = "0x74E899Ca241c2f73d39Ab18970F5521B5D78Db63";
+export const SYMBION_ADDRESS = "0x2d7312999e1b86e9088eAB0C9D3a58ac98005ad9";
 
 export const SYMBION_ABI = [
   {
     "type": "function",
-    "name": "createCampaign",
+    "name": "createBounty",
     "inputs": [
       { "name": "name", "type": "string" },
-      { "name": "price", "type": "uint256" },
-      { "name": "commissionBps", "type": "uint256" }
+      { "name": "description", "type": "string" },
+      { "name": "rewardPerWinner", "type": "uint256" },
+      { "name": "maxWinners", "type": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "uint256" }],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "campaigns",
-    "inputs": [{ "name": "id", "type": "uint256" }],
-    "outputs": [
-      { "name": "id", "type": "uint256" },
-      { "name": "merchant", "type": "address" },
-      { "name": "name", "type": "string" },
-      { "name": "price", "type": "uint256" },
-      { "name": "commissionBps", "type": "uint256" },
-      { "name": "active", "type": "bool" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "purchase",
-    "inputs": [
-      { "name": "campaignId", "type": "uint256" },
-      { "name": "affiliate", "type": "address" }
-    ],
-    "outputs": [],
     "stateMutability": "payable"
   },
   {
     "type": "function",
-    "name": "nextCampaignId",
-    "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256" }],
-    "stateMutability": "view"
+    "name": "submitWork",
+    "inputs": [
+      { "name": "bountyId", "type": "uint256" },
+      { "name": "proofUrl", "type": "string" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "balances",
-    "inputs": [{ "name": "account", "type": "address" }],
-    "outputs": [{ "name": "", "type": "uint256" }],
-    "stateMutability": "view"
+    "name": "selectWinner",
+    "inputs": [
+      { "name": "bountyId", "type": "uint256" },
+      { "name": "winner", "type": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "getActiveCampaigns",
+    "name": "refundRemaining",
+    "inputs": [{ "name": "bountyId", "type": "uint256" }],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getActiveBounties",
     "inputs": [],
     "outputs": [
       {
         "type": "tuple[]",
         "components": [
           { "name": "id", "type": "uint256" },
-          { "name": "merchant", "type": "address" },
+          { "name": "creator", "type": "address" },
           { "name": "name", "type": "string" },
-          { "name": "price", "type": "uint256" },
-          { "name": "commissionBps", "type": "uint256" },
+          { "name": "description", "type": "string" },
+          { "name": "totalReward", "type": "uint256" },
+          { "name": "rewardPerWinner", "type": "uint256" },
+          { "name": "maxWinners", "type": "uint256" },
+          { "name": "winnersSelected", "type": "uint256" },
           { "name": "active", "type": "bool" }
         ]
       }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getSubmissions",
+    "inputs": [{ "name": "bountyId", "type": "uint256" }],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "components": [
+          { "name": "submitter", "type": "address" },
+          { "name": "proofUrl", "type": "string" },
+          { "name": "isWinner", "type": "bool" }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "bounties",
+    "inputs": [{ "name": "id", "type": "uint256" }],
+    "outputs": [
+      { "name": "id", "type": "uint256" },
+      { "name": "creator", "type": "address" },
+      { "name": "name", "type": "string" },
+      { "name": "description", "type": "string" },
+      { "name": "totalReward", "type": "uint256" },
+      { "name": "rewardPerWinner", "type": "uint256" },
+      { "name": "maxWinners", "type": "uint256" },
+      { "name": "winnersSelected", "type": "uint256" },
+      { "name": "active", "type": "bool" }
     ],
     "stateMutability": "view"
   }
