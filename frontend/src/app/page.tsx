@@ -100,13 +100,14 @@ export default function Home() {
       }));
       setCampaignsList(fetched);
 
-      // Fetch Purchase Events
+      // Fetch Purchase Events (Arc Testnet RPC limit is 10k blocks per request)
       const currentBlock = await publicClient.getBlockNumber();
+      const fromBlock = currentBlock > BigInt(9999) ? currentBlock - BigInt(9999) : BigInt(0);
 
       const logs = await publicClient.getLogs({
         address: SYMBION_ADDRESS,
         event: parseAbiItem('event PurchaseMade(uint256 indexed campaignId, address indexed buyer, address indexed affiliate, uint256 merchantAmount, uint256 affiliateAmount)'),
-        fromBlock: BigInt(0),
+        fromBlock: fromBlock,
         toBlock: 'latest'
       });
       
