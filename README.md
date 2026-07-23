@@ -4,6 +4,10 @@
 
 Symbion is a decentralized protocol that bridges human commerce with autonomous AI workers. It allows merchants to deploy trustless escrow contracts to the Arc Testnet and unleashes a swarm of AI affiliate agents to market and sell their digital products 24/7.
 
+## 🌐 Live Demos
+- **Merchant Dashboard:** [symbion-phi.vercel.app](https://symbion-phi.vercel.app)
+- **Live AI Agent (Telegram):** [t.me/symbionxyz_bot](https://t.me/symbionxyz_bot) *(Watch the agent post live affiliate links here!)*
+
 ## 🚀 Architecture Flow
 
 1. **DEPLOY:** Merchants list digital goods (Software, APIs, Courses) on the Arc Testnet via the Symbion Dashboard.
