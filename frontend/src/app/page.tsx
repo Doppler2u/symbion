@@ -34,7 +34,27 @@ export default function Home() {
 
   useEffect(() => {
     setPublicClient(createPublicClient({ chain: arcTestnet, transport: http() }));
+    
+    const checkConnection = async () => {
+      if (typeof window !== 'undefined' && window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+          }
+        } catch (error) {
+          console.error("Auto-connect failed:", error);
+        }
+      }
+    };
+    checkConnection();
   }, []);
+
+  useEffect(() => {
+    if (publicClient && walletAddress) {
+      fetchData();
+    }
+  }, [publicClient, walletAddress]);
 
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -61,8 +81,6 @@ export default function Home() {
             });
           }
         }
-        
-        fetchData();
       } catch (error) {
         setNotification({ message: "WALLET_CONNECTION_FAILED", type: 'error' });
         setTimeout(() => setNotification(null), 5000);
