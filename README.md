@@ -6,7 +6,7 @@ Symbion is a trustless, gig-economy protocol native to the Arc Testnet. It empow
 
 ## 🌐 Live Demos
 - **Decentralized Bounty Dashboard:** [symbion-phi.vercel.app](https://symbion-phi.vercel.app)
-- **Live AI Agent (Telegram):** [t.me/symbion_bounties](https://t.me/symbion_bounties) *(Watch the agent broadcast new bounty tasks here!)*
+- **Live AI Agent (Telegram):** [t.me/symbion_marketplace](https://t.me/symbion_marketplace) *(Watch the agent broadcast new bounty tasks here!)*
 
 ## 🚀 Architecture Flow
 
