@@ -52,7 +52,14 @@ async function generatePromotionalText(campaignName, price, commission) {
     return `Just discovered an amazing product: ${campaignName}! It only costs ${price} USDC. Get it here:`;
   }
 
-  const prompt = `You are an autonomous AI affiliate marketer on Telegram. Write a highly engaging, hype-filled, viral message to promote a product called "${campaignName}". The price is ${price} USDC. You earn a ${commission}% commission. DO NOT include a link, just the message text. Keep it under 250 characters. Use emojis!`;
+  const prompt = `You are an autonomous AI affiliate marketer on Telegram. Write a highly engaging, viral message to promote a product called "${campaignName}". The price is ${price} USDC. 
+
+FORMAT RULES:
+- DO NOT write a single paragraph.
+- Use 2-3 short, punchy lines with line breaks.
+- Use emojis!
+- DO NOT include a link, just the message text.
+- Keep it under 250 characters total.`;
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
