@@ -1,7 +1,9 @@
 import dotenv from 'dotenv';
 import { createPublicClient, http as viemHttp, formatUnits } from 'viem';
 import { defineChain } from 'viem';
-import http from 'http';
+import express from 'express';
+import cors from 'cors';
+import sqlite3 from 'sqlite3';
 
 dotenv.config();
 
@@ -41,10 +43,67 @@ const SYMBION_ABI = [
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextBountyId",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getSubmissions",
+    "inputs": [{ "name": "bountyId", "type": "uint256" }],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "components": [
+          { "name": "submitter", "type": "address" },
+          { "name": "proofUrl", "type": "string" },
+          { "name": "isWinner", "type": "bool" }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "bounties",
+    "inputs": [{ "name": "id", "type": "uint256" }],
+    "outputs": [
+      { "name": "id", "type": "uint256" },
+      { "name": "creator", "type": "address" },
+      { "name": "name", "type": "string" },
+      { "name": "description", "type": "string" },
+      { "name": "totalReward", "type": "uint256" },
+      { "name": "rewardPerWinner", "type": "uint256" },
+      { "name": "maxWinners", "type": "uint256" },
+      { "name": "winnersSelected", "type": "uint256" },
+      { "name": "active", "type": "bool" }
+    ],
+    "stateMutability": "view"
   }
 ];
 
 const publicClient = createPublicClient({ chain: arcTestnet, transport: viemHttp() });
+
+// --- DATABASE SETUP ---
+const db = new sqlite3.Database('./symbion.db');
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS submissions (
+      id TEXT PRIMARY KEY,
+      bountyId INTEGER,
+      bountyName TEXT,
+      rewardPerWinner TEXT,
+      isActive BOOLEAN,
+      submitter TEXT,
+      proofUrl TEXT,
+      isWinner BOOLEAN
+    )
+  `);
+});
 
 // --- MEMORY STATE ---
 const seenBounties = new Set();
@@ -139,8 +198,71 @@ async function runAgentCycle() {
     // Filter for brand new bounties we haven't seen yet
     const newBounties = activeBounties.filter(b => !seenBounties.has(Number(b.id)));
 
+    // --- DATABASE INDEXING ---
+    // Fetch submissions for ALL bounties (historical and active) safely
+    try {
+      const fetchWithRetry = async (contractCall, retries = 5, delay = 1500) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            return await publicClient.readContract(contractCall);
+          } catch (err) {
+            if (i < retries - 1) {
+              await new Promise(res => setTimeout(res, delay * (i + 1))); // Exponential backoff
+            } else {
+              throw err;
+            }
+          }
+        }
+      };
+
+      const nextId = await fetchWithRetry({
+        address: SYMBION_ADDRESS,
+        abi: SYMBION_ABI,
+        functionName: 'nextBountyId'
+      });
+      
+      for (let i = 1; i < Number(nextId); i++) {
+        await new Promise(r => setTimeout(r, 500));
+        const submissions = await fetchWithRetry({
+          address: SYMBION_ADDRESS,
+          abi: SYMBION_ABI,
+          functionName: 'getSubmissions',
+          args: [BigInt(i)]
+        }).catch(() => []);
+
+        if (submissions.length > 0) {
+          await new Promise(r => setTimeout(r, 500));
+          const bountyInfo = await fetchWithRetry({
+            address: SYMBION_ADDRESS,
+            abi: SYMBION_ABI,
+            functionName: 'bounties',
+            args: [BigInt(i)]
+          }).catch(() => null);
+
+          if (bountyInfo) {
+            const bountyName = bountyInfo[2];
+            const rewardPerWinner = formatUnits(bountyInfo[5], 18);
+            const isActive = bountyInfo[8] ? 1 : 0;
+
+            submissions.forEach((sub) => {
+              const rowId = `${i}-${sub.submitter.toLowerCase()}`;
+              db.run(
+                `INSERT OR REPLACE INTO submissions (id, bountyId, bountyName, rewardPerWinner, isActive, submitter, proofUrl, isWinner) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [rowId, i, bountyName, rewardPerWinner, isActive, sub.submitter.toLowerCase(), sub.proofUrl, sub.isWinner ? 1 : 0]
+              );
+            });
+          }
+        }
+        // tiny delay to respect RPC
+        await new Promise(r => setTimeout(r, 100));
+      }
+    } catch (e) {
+      console.error("Indexing error:", e);
+    }
+
     if (newBounties.length === 0) {
-      console.log(`[SCAN] ${new Date().toLocaleTimeString()} - No new bounties found. Waiting...`);
+      console.log(`[SCAN] ${new Date().toLocaleTimeString()} - No new bounties found. Submissions indexed. Waiting...`);
       return;
     }
 
@@ -182,6 +304,7 @@ ${link}`;
         console.log("-".repeat(40));
     }
     
+    
   } catch (error) {
     console.error("Agent encountered an error scanning the blockchain:", error);
   }
@@ -192,15 +315,43 @@ ${link}`;
 console.log("/// SYMBION REAL-TIME AI AGENT WORKER ///");
 console.log(`Agent Wallet: ${AGENT_WALLET_ADDRESS}`);
 
-// 1. Create a dummy HTTP Server so Render knows the service is alive
-const PORT = process.env.PORT || 3000;
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Symbion Real-Time Agent is running normally.\n');
+// 1. Create a real Express API Server
+const PORT = 3001;
+const app = express();
+app.use(cors());
+
+app.get('/health', (req, res) => {
+  res.send('Symbion Real-Time Agent & Indexer is running normally.');
 });
 
-server.listen(PORT, () => {
-    console.log(`✅ Render Health Check Server listening on port ${PORT}`);
+app.get('/api/submissions', (req, res) => {
+  const wallet = req.query.wallet;
+  if (!wallet) return res.status(400).json({ error: "Missing wallet address" });
+
+  db.all(
+    `SELECT * FROM submissions WHERE submitter = ? ORDER BY bountyId DESC`,
+    [wallet.toLowerCase()],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const formatted = rows.map(r => ({
+        bounty: {
+          id: r.bountyId,
+          name: r.bountyName,
+          rewardPerWinner: r.rewardPerWinner
+        },
+        proofUrl: r.proofUrl,
+        isWinner: Boolean(r.isWinner),
+        isActive: Boolean(r.isActive)
+      }));
+      
+      res.json(formatted);
+    }
+  );
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Render API & Health Server listening explicitly on port ${PORT}`);
 });
 
 // 2. Poll every 15 seconds instead of 1 hour

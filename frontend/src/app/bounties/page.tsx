@@ -103,70 +103,14 @@ export default function BountiesPage() {
     if (!walletAddress) return;
     setLoading(true);
     try {
-      const fetchWithRetry = async (contractCall: any, retries = 3, delay = 1500) => {
-        for (let i = 0; i < retries; i++) {
-          try {
-            return await publicClient.readContract(contractCall);
-          } catch (err: any) {
-            if (err.message && err.message.includes('request limit reached') && i < retries - 1) {
-              await new Promise(res => setTimeout(res, delay * (i + 1))); // Exponential backoff
-            } else {
-              throw err;
-            }
-          }
-        }
-      };
-
-      const nextId = await fetchWithRetry({
-        address: SYMBION_ADDRESS,
-        abi: SYMBION_ABI,
-        functionName: 'nextBountyId'
-      });
+      const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL || 'http://127.0.0.1:3001';
+      const response = await fetch(`${AGENT_URL}/api/submissions?wallet=${walletAddress}`);
+      if (!response.ok) throw new Error("Failed to fetch submissions from indexer");
       
-      const subs = [];
-      // Loop backwards to show newest first
-      for (let i = Number(nextId) - 1; i >= 1; i--) {
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        const submissions: any = await fetchWithRetry({
-          address: SYMBION_ADDRESS,
-          abi: SYMBION_ABI,
-          functionName: 'getSubmissions',
-          args: [BigInt(i)]
-        }).catch(() => []);
-
-        if (!submissions || submissions.length === 0) continue;
-
-        const mySub = submissions.find((s: any) => s.submitter.toLowerCase() === walletAddress.toLowerCase());
-        
-        if (mySub) {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          const bountyInfo: any = await fetchWithRetry({
-            address: SYMBION_ADDRESS,
-            abi: SYMBION_ABI,
-            functionName: 'bounties',
-            args: [BigInt(i)]
-          }).catch(() => null);
-
-          if (bountyInfo) {
-            subs.push({
-              bounty: {
-                id: Number(bountyInfo[0]),
-                creator: bountyInfo[1],
-                name: bountyInfo[2],
-                rewardPerWinner: formatUnits(bountyInfo[5], 18),
-              },
-              proofUrl: mySub.proofUrl,
-              isWinner: mySub.isWinner,
-              isActive: bountyInfo[8]
-            });
-          }
-        }
-      }
+      const subs = await response.json();
       setMySubmissions(subs);
     } catch(err) {
-      console.error(err);
+      console.error("Indexer API Error:", err);
     }
     setLoading(false);
   };

@@ -25,6 +25,7 @@ cache_forge/
 # OS Files
 .DS_Store
 Thumbs.db
+*.db
 
 # Agent Worker
 agent/node_modules/
