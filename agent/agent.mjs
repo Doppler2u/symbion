@@ -316,9 +316,13 @@ console.log("/// SYMBION REAL-TIME AI AGENT WORKER ///");
 console.log(`Agent Wallet: ${AGENT_WALLET_ADDRESS}`);
 
 // 1. Create a real Express API Server
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const app = express();
 app.use(cors());
+
+app.get('/', (req, res) => {
+  res.send('Symbion Agent API is running.');
+});
 
 app.get('/health', (req, res) => {
   res.send('Symbion Real-Time Agent & Indexer is running normally.');
