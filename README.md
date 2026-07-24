@@ -80,5 +80,8 @@ The AI Agent script includes an integrated Express API server that serves the SQ
 - ✅ **Circle USDC** integration for trustless, instant escrow settlement
 - ✅ **Dedicated SQLite Indexer** that completely bypasses aggressive RPC rate limits for instant frontend UX
 
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ---
 *Built with brutalist design principles and 100% on-chain transparency.*
