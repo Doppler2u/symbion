@@ -356,8 +356,8 @@ export default function Home() {
                 ) : activityFeed.map((row, idx) => (
                   <tr key={idx} className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200">
                     <td className="py-4 text-arc-green">
-                      <a href={row.hash === 'Indexed' ? '#' : `https://testnet.arcscan.app/tx/${row.hash}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                        {row.hash === 'Indexed' ? '[INDEXED_BY_AGENT]' : `${row.hash.slice(0, 10)}...${row.hash.slice(-6)}`}
+                      <a href={`https://testnet.arcscan.app/tx/${row.hash}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                        {row.hash.slice(0, 10)}...{row.hash.slice(-6)}
                       </a>
                     </td>
                     <td className="py-4 text-gray-400">

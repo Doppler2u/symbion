@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { createPublicClient, http as viemHttp, formatUnits } from 'viem';
+import { createPublicClient, http as viemHttp, formatUnits, parseAbiItem } from 'viem';
 import { defineChain } from 'viem';
 import express from 'express';
 import cors from 'cors';
@@ -101,6 +101,15 @@ db.serialize(() => {
       submitter TEXT,
       proofUrl TEXT,
       isWinner BOOLEAN
+    )
+  `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payouts (
+      txHash TEXT PRIMARY KEY,
+      bountyId INTEGER,
+      winner TEXT,
+      amount TEXT,
+      blockNumber INTEGER
     )
   `);
 });
@@ -356,15 +365,15 @@ app.get('/api/submissions', (req, res) => {
 
 app.get('/api/payouts', (req, res) => {
   db.all(
-    `SELECT * FROM submissions WHERE isWinner = 1 ORDER BY bountyId DESC LIMIT 5`,
+    `SELECT * FROM payouts ORDER BY blockNumber DESC LIMIT 5`,
     [],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       
       const formatted = rows.map(r => ({
-        hash: 'Indexed', // We don't store tx hash in sqlite currently, so just show a placeholder
-        winner: r.submitter,
-        amount: r.rewardPerWinner,
+        hash: r.txHash,
+        winner: r.winner,
+        amount: r.amount,
         status: 'PAID'
       }));
       
@@ -389,3 +398,66 @@ setInterval(() => {
 }, FAST_POLL_INTERVAL);
 
 console.log(`⏳ Agent armed. Scanning Arc Testnet every ${FAST_POLL_INTERVAL / 1000} seconds for new bounties...`);
+
+// 3. Event Log Indexer for Payouts
+let lastIndexedBlock = BigInt(0);
+
+async function indexPayoutEvents() {
+  try {
+    const currentBlock = await publicClient.getBlockNumber();
+    if (lastIndexedBlock === BigInt(0)) {
+      // First run: just index the last 20,000 blocks to avoid timeout
+      lastIndexedBlock = currentBlock > BigInt(20000) ? currentBlock - BigInt(20000) : BigInt(0);
+    }
+    
+    let fromBlock = lastIndexedBlock + BigInt(1);
+    if (fromBlock > currentBlock) return; // Up to date
+    
+    console.log(`[INDEXER] Fetching WinnerSelected events from ${fromBlock} to ${currentBlock}...`);
+    
+    // Fetch in safe batches of 2000 blocks
+    while (fromBlock <= currentBlock) {
+      let toBlock = fromBlock + BigInt(1999);
+      if (toBlock > currentBlock) toBlock = currentBlock;
+      
+      try {
+        const batchLogs = await publicClient.getLogs({
+          address: SYMBION_ADDRESS,
+          event: parseAbiItem('event WinnerSelected(uint256 indexed bountyId, address indexed winner, uint256 amountPaid)'),
+          fromBlock: fromBlock,
+          toBlock: toBlock
+        });
+        
+        batchLogs.forEach(log => {
+          const txHash = log.transactionHash;
+          const bountyId = Number(log.args.bountyId);
+          const winner = log.args.winner;
+          const amount = formatUnits(log.args.amountPaid, 18);
+          const blockNumber = Number(log.blockNumber);
+          
+          db.run(
+            `INSERT OR IGNORE INTO payouts (txHash, bountyId, winner, amount, blockNumber) VALUES (?, ?, ?, ?, ?)`,
+            [txHash, bountyId, winner, amount, blockNumber]
+          );
+        });
+        
+        lastIndexedBlock = toBlock;
+      } catch (e) {
+        console.error(`[INDEXER] Batch error: ${e.message}. Will retry next cycle.`);
+        break; // Stop and retry later
+      }
+      
+      fromBlock = toBlock + BigInt(1);
+      if (fromBlock <= currentBlock) {
+        await new Promise(r => setTimeout(r, 1000)); // Delay between batches
+      }
+    }
+  } catch (err) {
+    console.error("[INDEXER] Error indexing payouts:", err.message);
+  }
+}
+
+// Start indexer
+indexPayoutEvents();
+setInterval(indexPayoutEvents, 60 * 1000); // Check for new payouts every 60 seconds
+
