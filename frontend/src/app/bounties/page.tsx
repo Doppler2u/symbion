@@ -138,7 +138,7 @@ export default function BountiesPage() {
           animate={{ opacity: 1, y: 0 }}
           className="border border-arc-border bg-arc-panel p-8 flex-grow overflow-hidden shadow-2xl"
         >
-          <div className="flex justify-between items-center mb-8 border-b border-arc-border pb-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 mb-8 border-b border-arc-border pb-4">
             <h2 className="text-arc-green text-lg font-bold flex items-center gap-3">
               <Terminal size={20} /> /// ALL_ACTIVE_BOUNTY_TASKS
             </h2>
