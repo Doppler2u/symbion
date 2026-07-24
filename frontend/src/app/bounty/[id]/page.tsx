@@ -214,21 +214,21 @@ export default function BountyPage() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="flex justify-between items-center border-b border-arc-border pb-6 mb-12">
-        <div className="flex items-center gap-4">
+      <header className="flex flex-col md:flex-row justify-between items-center border-b border-arc-border pb-6 mb-8 md:mb-12 relative z-10 gap-6 md:gap-0">
+        <div className="flex items-center gap-4 w-full md:w-auto justify-center md:justify-start">
           <Logo className="w-8 h-8 text-arc-green" />
           <h1 className="text-2xl md:text-4xl font-bold tracking-[0.2em] text-white">
             SYMBION<span className="text-arc-green">_</span>
           </h1>
         </div>
         
-        <div className="hidden md:flex items-center gap-8 text-sm font-bold tracking-widest">
+        <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-8 text-xs md:text-sm font-bold tracking-widest w-full md:w-auto justify-center">
           <Link href="/" className="text-gray-400 hover:text-white transition-colors pb-1">DASHBOARD</Link>
           <Link href="/bounties" className="text-gray-400 hover:text-white transition-colors pb-1">ACTIVE_BOUNTY_TASKS</Link>
         </div>
 
-        <div className="flex gap-4">
-          <button onClick={walletAddress ? () => setWalletAddress(null) : connectWallet} className="group relative px-6 py-3 bg-transparent border border-arc-border hover:border-arc-green transition-colors overflow-hidden">
+        <div className="flex gap-4 w-full md:w-auto justify-center md:justify-end">
+          <button onClick={walletAddress ? disconnectWallet : connectWallet} className="group relative px-6 py-3 bg-transparent border border-arc-border hover:border-arc-green transition-colors overflow-hidden">
             <span className="relative z-10 text-sm font-bold group-hover:text-black transition-colors">
               {walletAddress ? (
                 <>

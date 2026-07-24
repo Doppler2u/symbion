@@ -86,20 +86,20 @@ export default function BountiesPage() {
     <div className="min-h-screen bg-arc-dark text-white p-4 md:p-8 flex flex-col font-sans uppercase tracking-widest relative">
       
       {/* Header */}
-      <header className="flex justify-between items-center border-b border-arc-border pb-6 mb-12 relative z-10">
-        <div className="flex items-center gap-4">
+      <header className="flex flex-col md:flex-row justify-between items-center border-b border-arc-border pb-6 mb-8 md:mb-12 relative z-10 gap-6 md:gap-0">
+        <div className="flex items-center gap-4 w-full md:w-auto justify-center md:justify-start">
           <Logo className="w-8 h-8 text-arc-green" />
           <h1 className="text-2xl md:text-4xl font-bold tracking-[0.2em] text-white">
             SYMBION<span className="text-arc-green">_</span>
           </h1>
         </div>
         
-        <div className="hidden md:flex items-center gap-8 text-sm font-bold tracking-widest">
+        <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-8 text-xs md:text-sm font-bold tracking-widest w-full md:w-auto justify-center">
           <Link href="/" className="text-gray-400 hover:text-white transition-colors pb-1">DASHBOARD</Link>
           <Link href="/bounties" className="text-arc-green border-b border-arc-green pb-1">ACTIVE_BOUNTY_TASKS</Link>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 w-full md:w-auto justify-center md:justify-end">
           <button onClick={walletAddress ? () => setWalletAddress(null) : undefined} className="group relative px-6 py-3 bg-transparent border border-arc-border hover:border-arc-green transition-colors overflow-hidden">
             <span className="relative z-10 text-sm font-bold group-hover:text-black transition-colors">
               {walletAddress ? (
@@ -119,7 +119,7 @@ export default function BountiesPage() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="border border-arc-border bg-arc-panel p-8 flex-grow overflow-x-auto shadow-2xl"
+          className="border border-arc-border bg-arc-panel p-8 flex-grow overflow-hidden shadow-2xl"
         >
           <div className="flex justify-between items-center mb-8 border-b border-arc-border pb-4">
             <h2 className="text-arc-green text-lg font-bold flex items-center gap-3">
@@ -144,46 +144,48 @@ export default function BountiesPage() {
           {loading ? (
             <div className="text-center py-20 text-arc-green animate-pulse">FETCHING_BLOCKCHAIN_DATA...</div>
           ) : (
-            <table className="w-full text-left text-base whitespace-nowrap">
-              <thead className="text-gray-500 border-b border-arc-border">
-                <tr>
-                  <th className="pb-6 font-normal px-4">TASK_ID</th>
-                  <th className="pb-6 font-normal px-4">TASK_NAME</th>
-                  <th className="pb-6 font-normal px-4">CREATOR</th>
-                  <th className="pb-6 font-normal px-4">REWARD (USDC)</th>
-                  <th className="pb-6 font-normal px-4 text-center">WINNERS</th>
-                  <th className="pb-6 font-normal px-4 text-right">ACTION</th>
-                </tr>
-              </thead>
-              <tbody className="font-mono normal-case text-sm">
-                {filteredBounties.length === 0 ? (
-                  <tr><td colSpan={6} className="py-12 text-gray-500 text-center">NO_BOUNTIES_FOUND</td></tr>
-                ) : filteredBounties.map((b, idx) => (
-                  <tr 
-                    key={idx} 
-                    onClick={() => router.push(`/bounty/${b.id}`)}
-                    className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200 cursor-pointer"
-                  >
-                    <td className="py-6 px-4 text-white">#{b.id}</td>
-                    <td className="py-6 px-4 text-arc-green text-base font-bold">
-                      {b.name}
-                    </td>
-                    <td className="py-6 px-4 text-gray-500">{b.creator.slice(0,8)}...</td>
-                    <td className="py-6 px-4 text-gray-300 font-bold">{b.rewardPerWinner} USDC</td>
-                    <td className="py-6 px-4 text-center text-gray-500">
-                      <span className="bg-arc-dark px-3 py-1 border border-arc-border rounded-full">
-                        {b.winnersSelected} / {b.maxWinners}
-                      </span>
-                    </td>
-                    <td className="py-6 px-4 text-right flex items-center justify-end gap-2">
-                      <button className="px-6 py-2 border border-arc-green text-arc-green hover:text-black hover:bg-arc-green transition-colors font-bold pointer-events-none">
-                        {b.creator.toLowerCase() === walletAddress?.toLowerCase() ? "REVIEW_WORK" : "SUBMIT_PROOF"}
-                      </button>
-                    </td>
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left text-base whitespace-nowrap">
+                <thead className="text-gray-500 border-b border-arc-border">
+                  <tr>
+                    <th className="pb-6 font-normal px-4">TASK_ID</th>
+                    <th className="pb-6 font-normal px-4">TASK_NAME</th>
+                    <th className="pb-6 font-normal px-4">CREATOR</th>
+                    <th className="pb-6 font-normal px-4">REWARD (USDC)</th>
+                    <th className="pb-6 font-normal px-4 text-center">WINNERS</th>
+                    <th className="pb-6 font-normal px-4 text-right">ACTION</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="font-mono normal-case text-sm">
+                  {filteredBounties.length === 0 ? (
+                    <tr><td colSpan={6} className="py-12 text-gray-500 text-center">NO_BOUNTIES_FOUND</td></tr>
+                  ) : filteredBounties.map((b, idx) => (
+                    <tr 
+                      key={idx} 
+                      onClick={() => router.push(`/bounty/${b.id}`)}
+                      className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200 cursor-pointer"
+                    >
+                      <td className="py-6 px-4 text-white">#{b.id}</td>
+                      <td className="py-6 px-4 text-arc-green text-base font-bold">
+                        {b.name}
+                      </td>
+                      <td className="py-6 px-4 text-gray-500">{b.creator.slice(0,8)}...</td>
+                      <td className="py-6 px-4 text-gray-300 font-bold">{b.rewardPerWinner} USDC</td>
+                      <td className="py-6 px-4 text-center">
+                        <span className="bg-arc-dark border border-arc-border px-3 py-1 rounded-full text-xs">
+                          {b.winnersSelected} / {b.maxWinners}
+                        </span>
+                      </td>
+                      <td className="py-6 px-4 text-right flex items-center justify-end gap-2">
+                        <button className="px-6 py-2 border border-arc-green text-arc-green hover:text-black hover:bg-arc-green transition-colors font-bold pointer-events-none">
+                          {b.creator.toLowerCase() === walletAddress?.toLowerCase() ? "REVIEW_WORK" : "SUBMIT_PROOF"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </motion.div>
       </main>
