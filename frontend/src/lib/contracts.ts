@@ -94,5 +94,12 @@ export const SYMBION_ABI = [
       { "name": "active", "type": "bool" }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextBountyId",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view"
   }
 ];

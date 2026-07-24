@@ -25,7 +25,8 @@ export default function BountiesPage() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [publicClient, setPublicClient] = useState<any>(null);
   const [bountiesList, setBountiesList] = useState<any[]>([]);
-  const [bountyFilter, setBountyFilter] = useState<'ALL' | 'MINE'>('ALL');
+  const [mySubmissions, setMySubmissions] = useState<any[]>([]);
+  const [bountyFilter, setBountyFilter] = useState<'ALL' | 'MINE' | 'SUBMISSIONS'>('ALL');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,9 +46,13 @@ export default function BountiesPage() {
 
   useEffect(() => {
     if (publicClient) {
-      fetchBounties();
+      if (bountyFilter === 'SUBMISSIONS') {
+        fetchMySubmissions();
+      } else {
+        fetchBounties();
+      }
     }
-  }, [publicClient]);
+  }, [publicClient, bountyFilter, walletAddress]);
 
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -92,6 +97,78 @@ export default function BountiesPage() {
       setLoading(false);
       isFetchingBounties = false;
     }
+  };
+
+  const fetchMySubmissions = async () => {
+    if (!walletAddress) return;
+    setLoading(true);
+    try {
+      const fetchWithRetry = async (contractCall: any, retries = 3, delay = 1500) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            return await publicClient.readContract(contractCall);
+          } catch (err: any) {
+            if (err.message && err.message.includes('request limit reached') && i < retries - 1) {
+              await new Promise(res => setTimeout(res, delay * (i + 1))); // Exponential backoff
+            } else {
+              throw err;
+            }
+          }
+        }
+      };
+
+      const nextId = await fetchWithRetry({
+        address: SYMBION_ADDRESS,
+        abi: SYMBION_ABI,
+        functionName: 'nextBountyId'
+      });
+      
+      const subs = [];
+      // Loop backwards to show newest first
+      for (let i = Number(nextId) - 1; i >= 1; i--) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const submissions: any = await fetchWithRetry({
+          address: SYMBION_ADDRESS,
+          abi: SYMBION_ABI,
+          functionName: 'getSubmissions',
+          args: [BigInt(i)]
+        }).catch(() => []);
+
+        if (!submissions || submissions.length === 0) continue;
+
+        const mySub = submissions.find((s: any) => s.submitter.toLowerCase() === walletAddress.toLowerCase());
+        
+        if (mySub) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const bountyInfo: any = await fetchWithRetry({
+            address: SYMBION_ADDRESS,
+            abi: SYMBION_ABI,
+            functionName: 'bounties',
+            args: [BigInt(i)]
+          }).catch(() => null);
+
+          if (bountyInfo) {
+            subs.push({
+              bounty: {
+                id: Number(bountyInfo[0]),
+                creator: bountyInfo[1],
+                name: bountyInfo[2],
+                rewardPerWinner: formatUnits(bountyInfo[5], 18),
+              },
+              proofUrl: mySub.proofUrl,
+              isWinner: mySub.isWinner,
+              isActive: bountyInfo[8]
+            });
+          }
+        }
+      }
+      setMySubmissions(subs);
+    } catch(err) {
+      console.error(err);
+    }
+    setLoading(false);
   };
 
   const filteredBounties = (bountyFilter === 'MINE' && walletAddress 
@@ -155,6 +232,12 @@ export default function BountiesPage() {
               >
                 [ MY_TASKS ]
               </button>
+              <button 
+                onClick={() => setBountyFilter('SUBMISSIONS')} 
+                className={`${bountyFilter === 'SUBMISSIONS' ? 'text-arc-green border-b border-arc-green' : 'text-gray-500 hover:text-white'} transition-colors pb-1`}
+              >
+                [ MY_SUBMISSIONS ]
+              </button>
             </div>
           </div>
           
@@ -162,46 +245,91 @@ export default function BountiesPage() {
             <div className="text-center py-20 text-arc-green animate-pulse">FETCHING_BLOCKCHAIN_DATA...</div>
           ) : (
             <div className="overflow-x-auto w-full">
-              <table className="w-full text-left text-base whitespace-nowrap">
-                <thead className="text-gray-500 border-b border-arc-border">
-                  <tr>
-                    <th className="pb-6 font-normal px-4">TASK_ID</th>
-                    <th className="pb-6 font-normal px-4">TASK_NAME</th>
-                    <th className="pb-6 font-normal px-4">CREATOR</th>
-                    <th className="pb-6 font-normal px-4">REWARD (USDC)</th>
-                    <th className="pb-6 font-normal px-4 text-center">WINNERS</th>
-                    <th className="pb-6 font-normal px-4 text-right">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody className="font-mono normal-case text-sm">
-                  {filteredBounties.length === 0 ? (
-                    <tr><td colSpan={6} className="py-12 text-gray-500 text-center">NO_BOUNTIES_FOUND</td></tr>
-                  ) : filteredBounties.map((b, idx) => (
-                    <tr 
-                      key={idx} 
-                      onClick={() => router.push(`/bounty/${b.id}`)}
-                      className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200 cursor-pointer"
-                    >
-                      <td className="py-6 px-4 text-white">#{b.id}</td>
-                      <td className="py-6 px-4 text-arc-green text-base font-bold">
-                        {b.name}
-                      </td>
-                      <td className="py-6 px-4 text-gray-500">{b.creator.slice(0,8)}...</td>
-                      <td className="py-6 px-4 text-gray-300 font-bold">{b.rewardPerWinner} USDC</td>
-                      <td className="py-6 px-4 text-center">
-                        <span className="bg-arc-dark border border-arc-border px-3 py-1 rounded-full text-xs">
-                          {b.winnersSelected} / {b.maxWinners}
-                        </span>
-                      </td>
-                      <td className="py-6 px-4 text-right flex items-center justify-end gap-2">
-                        <button className="px-6 py-2 border border-arc-green text-arc-green hover:text-black hover:bg-arc-green transition-colors font-bold pointer-events-none">
-                          {b.creator.toLowerCase() === walletAddress?.toLowerCase() ? "REVIEW_WORK" : "SUBMIT_PROOF"}
-                        </button>
-                      </td>
+              {bountyFilter === 'SUBMISSIONS' ? (
+                <table className="w-full text-left text-base whitespace-nowrap">
+                  <thead className="text-gray-500 border-b border-arc-border">
+                    <tr>
+                      <th className="pb-6 font-normal px-4">TASK_ID</th>
+                      <th className="pb-6 font-normal px-4">TASK_NAME</th>
+                      <th className="pb-6 font-normal px-4">PROOF_LINK</th>
+                      <th className="pb-6 font-normal px-4 text-center">STATUS</th>
+                      <th className="pb-6 font-normal px-4 text-right">PAYOUT</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="font-mono normal-case text-sm">
+                    {mySubmissions.length === 0 ? (
+                      <tr><td colSpan={5} className="py-12 text-gray-500 text-center">NO_SUBMISSIONS_FOUND</td></tr>
+                    ) : mySubmissions.map((sub, idx) => (
+                      <tr 
+                        key={idx} 
+                        onClick={() => router.push(`/bounty/${sub.bounty.id}`)}
+                        className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200 cursor-pointer"
+                      >
+                        <td className="py-6 px-4 text-white">#{sub.bounty.id}</td>
+                        <td className="py-6 px-4 text-white font-bold">{sub.bounty.name}</td>
+                        <td className="py-6 px-4 text-arc-green">
+                          <a href={sub.proofUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="hover:underline">
+                            {sub.proofUrl.length > 30 ? sub.proofUrl.substring(0,30) + '...' : sub.proofUrl}
+                          </a>
+                        </td>
+                        <td className="py-6 px-4 text-center">
+                          {sub.isWinner ? (
+                            <span className="text-arc-green bg-arc-green/10 px-3 py-1 border border-arc-green/30">APPROVED</span>
+                          ) : sub.isActive ? (
+                            <span className="text-yellow-500 bg-yellow-500/10 px-3 py-1 border border-yellow-500/30">PENDING</span>
+                          ) : (
+                            <span className="text-red-500 bg-red-500/10 px-3 py-1 border border-red-500/30">REJECTED</span>
+                          )}
+                        </td>
+                        <td className="py-6 px-4 text-right font-bold">
+                          {sub.isWinner ? `+${sub.bounty.rewardPerWinner} USDC` : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="w-full text-left text-base whitespace-nowrap">
+                  <thead className="text-gray-500 border-b border-arc-border">
+                    <tr>
+                      <th className="pb-6 font-normal px-4">TASK_ID</th>
+                      <th className="pb-6 font-normal px-4">TASK_NAME</th>
+                      <th className="pb-6 font-normal px-4">CREATOR</th>
+                      <th className="pb-6 font-normal px-4">REWARD (USDC)</th>
+                      <th className="pb-6 font-normal px-4 text-center">WINNERS</th>
+                      <th className="pb-6 font-normal px-4 text-right">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-mono normal-case text-sm">
+                    {filteredBounties.length === 0 ? (
+                      <tr><td colSpan={6} className="py-12 text-gray-500 text-center">NO_BOUNTIES_FOUND</td></tr>
+                    ) : filteredBounties.map((b, idx) => (
+                      <tr 
+                        key={idx} 
+                        onClick={() => router.push(`/bounty/${b.id}`)}
+                        className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200 cursor-pointer"
+                      >
+                        <td className="py-6 px-4 text-white">#{b.id}</td>
+                        <td className="py-6 px-4 text-arc-green text-base font-bold">
+                          {b.name}
+                        </td>
+                        <td className="py-6 px-4 text-gray-500">{b.creator.slice(0,8)}...</td>
+                        <td className="py-6 px-4 text-gray-300 font-bold">{b.rewardPerWinner} USDC</td>
+                        <td className="py-6 px-4 text-center">
+                          <span className="bg-arc-dark border border-arc-border px-3 py-1 rounded-full text-xs">
+                            {b.winnersSelected} / {b.maxWinners}
+                          </span>
+                        </td>
+                        <td className="py-6 px-4 text-right flex items-center justify-end gap-2">
+                          <button className="px-6 py-2 border border-arc-green text-arc-green hover:text-black hover:bg-arc-green transition-colors font-bold pointer-events-none">
+                            {b.creator.toLowerCase() === walletAddress?.toLowerCase() ? "REVIEW_WORK" : "SUBMIT_PROOF"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
         </motion.div>
