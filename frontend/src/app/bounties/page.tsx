@@ -49,6 +49,23 @@ export default function BountiesPage() {
     }
   }, [publicClient]);
 
+  const connectWallet = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        const [address] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setWalletAddress(address);
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x4CEF52' }],
+        });
+      } catch (error) {}
+    }
+  };
+
+  const disconnectWallet = () => {
+    setWalletAddress(null);
+  };
+
   const fetchBounties = async () => {
     if (isFetchingBounties) return;
     isFetchingBounties = true;
@@ -100,7 +117,7 @@ export default function BountiesPage() {
         </div>
 
         <div className="flex gap-4 w-full md:w-auto justify-center md:justify-end">
-          <button onClick={walletAddress ? () => setWalletAddress(null) : undefined} className="group relative px-6 py-3 bg-transparent border border-arc-border hover:border-arc-green transition-colors overflow-hidden">
+          <button onClick={walletAddress ? disconnectWallet : connectWallet} className="group relative px-6 py-3 bg-transparent border border-arc-border hover:border-arc-green transition-colors overflow-hidden">
             <span className="relative z-10 text-sm font-bold group-hover:text-black transition-colors">
               {walletAddress ? (
                 <>

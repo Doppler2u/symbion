@@ -69,6 +69,10 @@ export default function BountyPage() {
     }
   };
 
+  const disconnectWallet = () => {
+    setWalletAddress(null);
+  };
+
   const fetchBountyDetails = async () => {
     if (isFetchingBounty) return;
     isFetchingBounty = true;
