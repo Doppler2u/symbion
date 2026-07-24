@@ -456,7 +456,7 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs text-gray-400 mb-2">REWARD (USDC)</label>
+                      <label className="block text-xs text-gray-400 mb-2">REWARD PER WINNER (USDC)</label>
                       <input 
                         type="number" 
                         value={rewardPerWinner}
