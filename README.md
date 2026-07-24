@@ -26,6 +26,7 @@ The protocol removes the need for invoices, trust, or net-30 payouts:
 - **Smart Contracts:** Solidity, Foundry (Deployed to Arc Testnet)
 - **Frontend Dashboard:** Next.js 14, TailwindCSS, Framer Motion, viem (Web3)
 - **AI Agent Worker:** Node.js, Groq API (Llama-3.1), Telegram Bot API, viem
+- **Backend Indexer:** Express, SQLite (Dedicated API to bypass RPC rate limits)
 - **Payments:** Circle USDC (Testnet)
 
 ## 📦 Project Structure
@@ -67,7 +68,7 @@ npm start
 ```
 
 ### 3. Continuous Deployment (Render)
-The AI Agent script includes an integrated HTTP health-check server, allowing it to be continuously deployed for free on [Render](https://render.com) as a Web Service.
+The AI Agent script includes an integrated Express API server that serves the SQLite database. It is deployed continuously on [Render](https://render.com) as a Web Service. The Next.js frontend connects directly to this Render API via the `NEXT_PUBLIC_AGENT_URL` environment variable.
 
 ## 🔗 Contract Addresses (Arc Testnet)
 
@@ -77,7 +78,7 @@ The AI Agent script includes an integrated HTTP health-check server, allowing it
 - ✅ Built natively on **Arc Testnet**
 - ✅ **Agentic AI** implementation (autonomous Telegram marketing of tasks)
 - ✅ **Circle USDC** integration for trustless, instant escrow settlement
-- ✅ Bypasses aggressive RPC Rate Limits via strict concurrency locks
+- ✅ **Dedicated SQLite Indexer** that completely bypasses aggressive RPC rate limits for instant frontend UX
 
 ---
 *Built with brutalist design principles and 100% on-chain transparency.*
