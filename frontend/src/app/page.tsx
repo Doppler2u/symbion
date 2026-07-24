@@ -132,47 +132,13 @@ export default function Home() {
 
       await new Promise(resolve => setTimeout(resolve, 1200));
 
-      // Fetch Winner Selected Events
-      const currentBlock = await publicClient.getBlockNumber();
-      let collectedLogs: any[] = [];
-      let toBlock = currentBlock;
-      let maxBatches = 3; 
-
-      while (maxBatches > 0 && collectedLogs.length < 5 && toBlock > BigInt(0)) {
-        let fromBlock = toBlock > BigInt(9999) ? toBlock - BigInt(9999) : BigInt(0);
-        
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        
-        try {
-          const batchLogs = await publicClient.getLogs({
-            address: SYMBION_ADDRESS,
-            event: parseAbiItem('event WinnerSelected(uint256 indexed bountyId, address indexed winner, uint256 amountPaid)'),
-            fromBlock: fromBlock,
-            toBlock: toBlock
-          });
-          collectedLogs = [...batchLogs, ...collectedLogs];
-        } catch(e: any) {
-          console.error("Batch log fetch error:", e.message);
-          break; 
-        }
-
-        toBlock = fromBlock - BigInt(1);
-        maxBatches--;
-        
-        if (maxBatches > 0 && collectedLogs.length < 5) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+      // Fetch Winner Selected Events via Agent Indexer API
+      const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL || 'http://127.0.0.1:3001';
+      const payoutsRes = await fetch(`${AGENT_URL}/api/payouts`);
+      if (payoutsRes.ok) {
+        const feed = await payoutsRes.json();
+        setActivityFeed(feed);
       }
-      
-      const feed = collectedLogs.map((log: any) => ({
-        hash: log.transactionHash,
-        winner: log.args.winner,
-        amount: formatUnits(log.args.amountPaid, 18),
-        status: 'PAID'
-      })).reverse().slice(0, 5); // get last 5
-      
-      setActivityFeed(feed);
-
     } catch (error) {
       console.error("Fetch Data Error:", error);
     } finally {
@@ -390,8 +356,8 @@ export default function Home() {
                 ) : activityFeed.map((row, idx) => (
                   <tr key={idx} className="border-b border-arc-border/30 hover:bg-white/5 transition-colors duration-200">
                     <td className="py-4 text-arc-green">
-                      <a href={`https://testnet.arcscan.app/tx/${row.hash}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                        {row.hash.slice(0, 10)}...{row.hash.slice(-6)}
+                      <a href={row.hash === 'Indexed' ? '#' : `https://testnet.arcscan.app/tx/${row.hash}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                        {row.hash === 'Indexed' ? '[INDEXED_BY_AGENT]' : `${row.hash.slice(0, 10)}...${row.hash.slice(-6)}`}
                       </a>
                     </td>
                     <td className="py-4 text-gray-400">

@@ -354,6 +354,25 @@ app.get('/api/submissions', (req, res) => {
   );
 });
 
+app.get('/api/payouts', (req, res) => {
+  db.all(
+    `SELECT * FROM submissions WHERE isWinner = 1 ORDER BY bountyId DESC LIMIT 5`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const formatted = rows.map(r => ({
+        hash: 'Indexed', // We don't store tx hash in sqlite currently, so just show a placeholder
+        winner: r.submitter,
+        amount: r.rewardPerWinner,
+        status: 'PAID'
+      }));
+      
+      res.json(formatted);
+    }
+  );
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Render API & Health Server listening explicitly on port ${PORT}`);
 });
